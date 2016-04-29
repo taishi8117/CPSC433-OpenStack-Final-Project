@@ -1,0 +1,12 @@
+package lib;
+
+/**
+ * Instance that defines the range of IP addresses as well as
+ * the gateway address for Subnet
+ * @author TAISHI
+ *
+ */
+public class SubnetAddress {
+
+
+}

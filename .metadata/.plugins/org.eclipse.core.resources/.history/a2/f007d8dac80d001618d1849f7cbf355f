@@ -1,0 +1,24 @@
+package project;
+
+public class APIHandler {
+	private Controller controller;
+	
+	/**
+	 * Creates a new tenant and network. Should be called when the corresponding API is called
+	 * @return long - tenantID
+	 */
+	//TODO error handling when there is an error??
+	public long createNewTenantAndNetwork(String networkName) throws Exception {
+		long tenantID = controller.registerNewTenant();
+		if (controller.registerNewNetwork(tenantID, networkName) == null) {
+			
+		}
+		return tenantID;
+	}
+	
+	public long createNewSubnet(long tenantID, long networkID) throws Exception {
+		
+	}
+	
+
+}

@@ -1,0 +1,10 @@
+package lib;
+
+/**
+ * Manages Link Layer stuff, given for each subnet
+ * @author TAISHI
+ *
+ */
+public class LinkLayerHandler {
+
+}

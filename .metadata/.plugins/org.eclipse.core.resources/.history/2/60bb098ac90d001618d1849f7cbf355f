@@ -1,0 +1,30 @@
+package project;
+
+import object.Network;
+
+public class APIHandler {
+	private Controller controller;
+	
+	/**
+	 * Creates a new tenant and network. Should be called when the corresponding API is called
+	 * @return long - tenantID
+	 */
+	public long createNewTenantAndNetwork(String networkName) throws Exception {
+		long tenantID = controller.registerNewTenant();
+
+		if (controller.registerNewNetwork(tenantID, networkName) == null) {
+			//error registering!!!!!
+			throw new Exception();
+		}
+		return tenantID;
+	}
+	
+	public long createNewSubnet(long tenantID, long networkID) throws Exception {
+		Network network = controller.getNetworkFromID(tenantID, networkID);
+		if (network == null) {
+
+			
+		}
+		
+	}
+}

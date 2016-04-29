@@ -1,0 +1,10 @@
+package project;
+
+/**
+ * Controller Instance
+ * @author TAISHI
+ *
+ */
+public class Controller {
+
+}

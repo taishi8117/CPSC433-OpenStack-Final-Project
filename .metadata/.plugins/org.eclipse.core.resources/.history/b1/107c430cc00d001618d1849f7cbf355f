@@ -1,0 +1,9 @@
+package object;
+
+public class Subnet {
+	
+	public long networkID;
+	public long tenantID;
+	
+
+}

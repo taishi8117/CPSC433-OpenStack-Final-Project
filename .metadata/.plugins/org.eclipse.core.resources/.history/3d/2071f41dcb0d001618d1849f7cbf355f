@@ -1,0 +1,9 @@
+package object;
+
+public class VirtualServer {
+	String serverName;
+	VirtualNIC dataNIC;
+	VirtualNIC controlNIC;
+
+
+}

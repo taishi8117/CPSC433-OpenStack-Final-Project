@@ -1,0 +1,62 @@
+package project;
+
+import java.util.HashMap;
+import java.util.Random;
+
+import lib.SubnetAddress;
+import object.Network;
+
+/**
+ * Controller Instance
+ * @author TAISHI
+ *
+ */
+public class Controller {
+	// maps tenantID to Hash Map of Network (mapping network ID to Network) 
+	private HashMap<Long, HashMap<Long,Network>> tenantMap;
+	
+
+	// Miscellaneous
+	public Random randomGen;
+	
+	
+	public Controller() {
+		// TODO Auto-generated constructor stub
+		this.tenantMap = new HashMap<Long, HashMap<Long,Network>>();
+		this.randomGen = new Random();
+	}
+	
+	
+	
+	/**
+	 * Assigns available priavte address space for a subset.
+	 * Should be called when a new subnet is created to assign
+	 * the range of IP address
+	 * @return SubnetAddress
+	 */
+	public SubnetAddress getAvailableSubnetAddr() {
+		//TODO return available range of IP address as SubnetAddress instance
+		return null;
+	}
+	
+	/**
+	 * Registers a new tenant (network) to this controller
+	 * @param String networkName - name of the network that you're creating
+	 * @return tenant ID that was registered
+	 */
+	public long registerNewTenant(String networkName) {
+		long tenantID;
+		
+		// randomly generate tenant ID until it finds a new one
+		do {
+			tenantID = randomGen.nextLong();
+		} while (tenantMap.containsKey(tenantID));
+		
+		Network newNetwork = new Network(this, networkName)
+		
+		tenantMap.put(tenantID, network);
+		
+		return tenantID;
+	}
+
+}

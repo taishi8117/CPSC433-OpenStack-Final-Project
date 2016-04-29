@@ -1,0 +1,16 @@
+package object;
+
+import lib.VirtualNIC;
+
+public class VirtualServer {
+	public long serverID;
+	
+	public String serverName;
+	private VirtualNIC dataNIC;
+	private VirtualNIC controlNIC;
+
+	// Subnet to which this server belong
+	private Subnet parentSubnet;
+
+
+}

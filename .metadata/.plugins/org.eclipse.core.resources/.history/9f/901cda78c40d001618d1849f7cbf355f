@@ -1,0 +1,14 @@
+package project;
+
+public class APIHandler {
+	private Controller controller;
+	
+	/**
+	 * Creates a new Network instance.
+	 */
+	public void createNetwork() {
+		
+	}
+	
+
+}

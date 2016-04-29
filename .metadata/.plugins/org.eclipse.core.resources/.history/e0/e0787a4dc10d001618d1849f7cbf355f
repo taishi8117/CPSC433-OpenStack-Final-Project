@@ -1,0 +1,26 @@
+package object;
+
+import java.util.HashMap;
+
+import lib.SubnetAddress;
+
+public class Subnet {
+	public long subnetID;
+	
+	// network to which this subnet belongs
+	private Network parentNetwork;	
+	
+	// maps serverID to VirtualServer instance
+	private HashMap<Long, VirtualServer> serverMap;
+	
+	// maintains the range of subnet address
+	private SubnetAddress subnetAddress;
+	
+
+	
+	
+	
+	
+	
+
+}

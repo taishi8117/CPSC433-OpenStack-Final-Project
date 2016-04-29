@@ -1,0 +1,8 @@
+package object;
+
+public class Subnet {
+	
+	private Network parentNetwork;
+	
+
+}

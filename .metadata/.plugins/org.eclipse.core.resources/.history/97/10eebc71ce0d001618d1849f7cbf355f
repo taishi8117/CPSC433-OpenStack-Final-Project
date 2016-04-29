@@ -1,0 +1,28 @@
+package lib;
+
+/**
+ * Instance that defines the range of IP addresses as well as
+ * the gateway address for Subnet
+ * @author TAISHI
+ *
+ */
+public class SubnetAddress {
+	int subnet;
+	int mask;
+	
+	/**
+	 * Creates a SubnetAddress instance
+	 * -> can specify subnet address with mask as follows
+	 * e.g.: case of 10.1.1.0/24
+	 * 
+	 * @param subnetAddress - should be 10.1.1.0
+	 * @param mask - should be 24
+	 */
+	public SubnetAddress(Inet4Address subnetAddress, int mask) {
+		// TODO Auto-generated constructor stub
+	}
+
+
+
+
+}

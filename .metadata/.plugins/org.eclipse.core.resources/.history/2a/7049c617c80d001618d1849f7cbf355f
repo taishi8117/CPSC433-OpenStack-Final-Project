@@ -1,0 +1,15 @@
+package project;
+
+public class APIHandler {
+	private Controller controller;
+	
+	/**
+	 * Creates a new Network instance. Should be called when the corresponding API is called
+	 */
+	public void createNetwork() {
+		long tenantID = controller.registerNewTenant();
+		
+	}
+	
+
+}

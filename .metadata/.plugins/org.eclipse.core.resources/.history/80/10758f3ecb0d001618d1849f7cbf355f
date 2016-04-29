@@ -1,0 +1,11 @@
+package object;
+
+import lib.VirtualNIC;
+
+public class VirtualServer {
+	String serverName;
+	VirtualNIC dataNIC;
+	VirtualNIC controlNIC;
+
+
+}
