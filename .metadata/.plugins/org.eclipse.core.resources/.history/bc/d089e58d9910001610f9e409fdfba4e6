@@ -21,14 +21,6 @@ public class APIHandler {
 		return tenantID;
 	}
 	
-	/**
-	 * Delete a specified tenand and its associated resources
-	 */
-	public long deleteTenand(long tenantID) {
-		return 0;
-		
-	}
-	
 	
 	/**
 	 * Creates a new subnet for a specified tenantID and networkID.
@@ -47,28 +39,6 @@ public class APIHandler {
 		
 		return subnetID;
 	}
-	
-	
-	public long createNewPort() {
-		return 1;
-	}
-	
-	public String listPort() {
-		return null;
-	}
-	
-	public String getPortDetails() {
-		return null;
-	}
-	
-	public long updatePort() {
-		return 0;
-	}
-	
-	public long deletePort() {
-		return 0;
-	}
-
 	
 	/**
 	 * Creates a new server for specified IDs
@@ -96,28 +66,17 @@ public class APIHandler {
 		return serverID;
 	}
 	
-
-	public String listServers(long tenantID, long networkID, long subnetID) {
-		return null;
-	}
 	
-	/**
-	 * Returns the server details in XML form
-	 */
-	public String getServerDetails(long tenantID, long networkID, long subnetID, long serverID) {
+	public VirtualServer getServerDetails(long tenantID, long networkID, long subnetID, long serverID) {
 		
 		return null;
 	}
 	
-	public int startServer() {
-		return 1;
+	// TODO implement
+	
+	public long createNewPort() {
+		return 0;
 	}
-	
-	public int stopServer() {
-		return 1;
-	}
-	
-	
 	
 	
 }

@@ -60,14 +60,6 @@ public class APIHandler {
 	public String getPortDetails() {
 		return null;
 	}
-	
-	public long updatePort() {
-		return 0;
-	}
-	
-	public long deletePort() {
-		return 0;
-	}
 
 	
 	/**

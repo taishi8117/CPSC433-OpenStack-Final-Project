@@ -30,10 +30,6 @@ set -x
 IMG="trusty"
 ARCH="amd64"
 
-# kvm defalut pool path
-DEF_POOL=default
-DEF_POOL_PATH=/var/lib/libvirt/images
-
 # arguments
 HOST=$1
 DOMAIN=$2

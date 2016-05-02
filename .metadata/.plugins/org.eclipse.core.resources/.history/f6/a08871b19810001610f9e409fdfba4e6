@@ -85,13 +85,13 @@ public class VirtualServer {
 	 *	 * userdata: the location of user-data file
 	 *
 	 *	create_server.sh basically does following:
+	 *	 ** KVM default pool path is in /var/lib/libvirt/images
 	 *	 ** POOL is located in /home/vm
 	 *	 ** Image format is qcow2
 	 *
 	 *	 + download Ubuntu 14.04 cloud image 
 	 *	 + create ISO image from userdata + metadata files and copy it to the pool
-	 *   + create a virtual machine using virt-install
-	 *   + cleanup temporary files
+	 *   + 
 	 *
 	 *	@exception when error creating a virtual machine
 	 */

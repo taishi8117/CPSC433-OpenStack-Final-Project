@@ -84,15 +84,6 @@ public class VirtualServer {
 	 *	 * metadata: the location of meta-data file
 	 *	 * userdata: the location of user-data file
 	 *
-	 *	create_server.sh basically does following:
-	 *	 ** POOL is located in /home/vm
-	 *	 ** Image format is qcow2
-	 *
-	 *	 + download Ubuntu 14.04 cloud image 
-	 *	 + create ISO image from userdata + metadata files and copy it to the pool
-	 *   + create a virtual machine using virt-install
-	 *   + cleanup temporary files
-	 *
 	 *	@exception when error creating a virtual machine
 	 */
 	public void createVirtualMachine() throws Exception {
@@ -153,7 +144,7 @@ public class VirtualServer {
 		String strBroadcast = dataNIC.subnetAddr.getBroadcastAddress().getHostAddress();
 		String strGatewayAddr = dataNIC.subnetAddr.getGatewayAddress().getHostAddress();
 		
-		//TODO create config file
+		//TODO create data
 
 
 		return 1;

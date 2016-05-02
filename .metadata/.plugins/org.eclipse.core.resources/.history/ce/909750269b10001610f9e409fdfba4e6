@@ -54,19 +54,7 @@ public class APIHandler {
 	}
 	
 	public String listPort() {
-		return null;
-	}
-	
-	public String getPortDetails() {
-		return null;
-	}
-	
-	public long updatePort() {
-		return 0;
-	}
-	
-	public long deletePort() {
-		return 0;
+		return "";
 	}
 
 	
@@ -96,10 +84,6 @@ public class APIHandler {
 		return serverID;
 	}
 	
-
-	public String listServers(long tenantID, long networkID, long subnetID) {
-		return null;
-	}
 	
 	/**
 	 * Returns the server details in XML form
@@ -118,6 +102,11 @@ public class APIHandler {
 	}
 	
 	
+	// TODO implement
+	
+	public long createNewPort() {
+		return 0;
+	}
 	
 	
 }

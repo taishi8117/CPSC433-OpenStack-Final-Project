@@ -90,8 +90,7 @@ public class VirtualServer {
 	 *
 	 *	 + download Ubuntu 14.04 cloud image 
 	 *	 + create ISO image from userdata + metadata files and copy it to the pool
-	 *   + create a virtual machine using virt-install
-	 *   + cleanup temporary files
+	 *   + 
 	 *
 	 *	@exception when error creating a virtual machine
 	 */
