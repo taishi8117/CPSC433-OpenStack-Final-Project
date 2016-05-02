@@ -39,6 +39,7 @@ public class Rule {
 
 
     public Rule(Chain chain, String networkName, long tenantID, long networkID) {
+`
     }
 
     @Override

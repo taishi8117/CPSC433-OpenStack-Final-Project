@@ -31,7 +31,6 @@ public class VirtualServer {
 	 * @param address
 	 */
 	public void assignDataIPAddr(Inet4Address address) {
-		//TODO error handling
 		this.dataNIC.assignIPAddr(address);
 	}
 
