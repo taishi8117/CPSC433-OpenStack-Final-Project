@@ -1,0 +1,62 @@
+package object;
+
+import java.net.Inet4Address;
+
+import lib.VirtualNIC;
+
+public class VirtualServer {
+	public long serverID;
+	
+	public String serverName;
+	private VirtualNIC dataNIC;
+	private VirtualNIC controlNIC;		//need IP address???
+
+	// Subnet to which this server belong
+	private Subnet parentSubnet;
+	
+	//TODO I have no idea about ports!!!!
+	
+	public VirtualServer(Subnet parentSubnet, long serverID, String serverName) {
+		this.parentSubnet = parentSubnet;
+		this.serverID = serverID;
+		this.serverName = serverName;
+		
+		//TODO configuration of virtual NIC
+		this.dataNIC = new VirtualNIC();
+		this.controlNIC = new VirtualNIC();
+	}
+	
+	/**
+	 * Assigns an IP address to data NIC. Should be called when dealing with DHCP
+	 * @param address
+	 */
+	public void assignDataIPAddr(Inet4Address address) {
+		//TODO error handling
+		this.dataNIC.assignIPAddr(address);
+	}
+	
+	
+	/**
+	 * Creates a virtual machine using create_server.sh script
+	 * # create_server.sh : script to create a virtual server using Ubuntu 14.04 cloud image on kvm
+	 *	 Needs to be run as root
+	 *	
+	 *	 Usage:
+	 *		# ./create_server.sh host domain disksize numcpu mem network metadata userdata
+	 *	 * host: the hostname of the server (needs to be unique)
+	 *	 * domain: the domain name in which the server is created
+	 *	 * disksize: the disk size for the server in GB
+	 *	 * numcpu: the number of CPUs allocated for the server
+	 *	 * mem: the amount of memory allocated for the server in MB
+	 *	 * network: the network configuration (VNIC) with no space
+	 *	 * metadata: the location of meta-data file
+	 *	 * userdata: the location of user-data file
+	 * @return
+	 */
+	public int createVirtualMachine() {
+		
+	}
+	
+
+
+}

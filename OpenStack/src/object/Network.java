@@ -18,7 +18,7 @@ public class Network {
 	public NetworkState state;
 	public String networkName;
 	
-	public Controller controller;
+	private Controller controller;
 	
 	// maps subnetID to Subnet instance
 	private HashMap<Long, Subnet> subnetMap;	
@@ -42,7 +42,7 @@ public class Network {
 	 * assigned to this subnet
 	 * @return subnet ID that was registered
 	 */
-	public long registerNewSubnet() {
+	public long registerNewSubnet(String domainName) {
 		long subnetID;
 		
 		// randomly generate subnet ID until it finds a new one
@@ -53,7 +53,7 @@ public class Network {
 		// get currently available subnet address space
 		SubnetAddress subnetAddr = controller.getAvailableSubnetAddr();
 		
-		Subnet subnet = new Subnet(this, subnetID, subnetAddr);
+		Subnet subnet = new Subnet(controller, this, subnetID, subnetAddr, domainName);
 		
 		subnetMap.put(subnetID, subnet);
 		

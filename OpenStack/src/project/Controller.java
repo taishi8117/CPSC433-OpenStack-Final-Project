@@ -13,6 +13,10 @@ import object.Network;
  *
  */
 public class Controller {
+	// global OpenStack configuration
+	public HashMap<String, String> configMap;
+	
+	
 	// maps tenantID to Hash Map of Network (mapping network ID to Network) 
 	private HashMap<Long, HashMap<Long,Network>> tenantMap;
 	private DNS dnsServer;
@@ -22,11 +26,12 @@ public class Controller {
 	public Random randomGen;
 	
 	
-	public Controller() {
+	public Controller(HashMap<String,String> configMap) {
 		// TODO Auto-generated constructor stub
 		this.tenantMap = new HashMap<Long, HashMap<Long,Network>>();
 		this.randomGen = new Random();
 		this.dnsServer = new DNS();
+		this.configMap = configMap;
 	}
 	
 	

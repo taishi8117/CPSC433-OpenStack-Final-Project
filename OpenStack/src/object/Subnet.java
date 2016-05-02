@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 import lib.LinkLayerHandler;
 import lib.SubnetAddress;
+import project.Controller;
 
 public class Subnet {
 	public long subnetID;
@@ -12,24 +13,34 @@ public class Subnet {
 	// network to which this subnet belongs
 	private Network parentNetwork;	
 	
+	// controller
+	private Controller controller;
+	
 	// maps serverID to VirtualServer instance
 	private HashMap<Long, VirtualServer> serverMap;
 	
 	// maintains the range of subnet address and gateway address
-	private SubnetAddress subnetAddress;
+	public SubnetAddress subnetAddress;
 	
 	// this manages LinkLayer stuff
 	private LinkLayerHandler linkHandler;
+	
+	// domain name for this subnet (e.g. network.tenantName ?)
+	public String domainName;
+	
+
 	
 
 	/**
 	 * Create Subnet instance. Should be called when createSubnet() API is called
 	 */
-	public Subnet(Network parentNetwork, long subnetID, SubnetAddress subnetAddr) {
+	public Subnet(Controller controller, Network parentNetwork, long subnetID, SubnetAddress subnetAddr, String domainName) {
+		this.controller = controller;
 		this.parentNetwork = parentNetwork;
 		this.subnetID = subnetID;
 		this.serverMap = new HashMap<Long, VirtualServer>();
 		this.subnetAddress = subnetAddr;
+		this.domainName = domainName;
 		
 		this.linkHandler = new LinkLayerHandler();
 
@@ -47,11 +58,13 @@ public class Subnet {
 		long serverID;
 		// randomly generate subnet ID until it finds a new one
 		do {
-			serverID = parentNetwork.controller.randomGen.nextLong();
+			serverID = controller.randomGen.nextLong();
 		} while (serverMap.containsKey(serverID));
 		
 		// registers a new virtual server
-		VirtualServer server = new VirtualServer(this, serverID, serverName);
+		String networkCfg = getNetworkCfg();
+		//TODO this needs to use more specified contstructor later
+		VirtualServer server = new VirtualServer(controller, this, serverID, serverName, networkCfg);
 		serverMap.put(serverID, server);
 
 		// assign an available IP address to the newly created server
@@ -63,8 +76,17 @@ public class Subnet {
 		server.assignDataIPAddr(ipAddr);
 		
 		return serverID;
-
 	}
-
+	
+	/**
+	 * Get network configuration for virt-install
+	 * Cannot contain space in the returned string
+	 * 
+	 * e.g. -- "bridge=virbr0,model=virtio"
+	 * @return
+	 */
+	public String getNetworkCfg() {
+		return "bridge=virbr0,model=virtio";
+	}
 	
 }

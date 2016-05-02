@@ -124,3 +124,5 @@ virt-install \
 
 # cleanup
 rm configuration.iso ${METADATA_FILE} ${USERDATA_FILE}
+
+exit 0

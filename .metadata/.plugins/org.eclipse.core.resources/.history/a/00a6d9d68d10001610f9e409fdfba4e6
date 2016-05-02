@@ -1,0 +1,23 @@
+package project;
+
+/**
+ * 
+ * Main class for OpenStack
+ * # java OpenStack -config <config_file_name>
+ *
+ */
+public class OpenStack {
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		run();
+	}
+	
+
+	private static void run() {
+		//TODO create a listening server
+		Controller controller = new Controller();
+		
+	}
+
+}

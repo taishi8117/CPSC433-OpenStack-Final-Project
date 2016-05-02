@@ -28,13 +28,13 @@ public class APIHandler {
 	 * @return long - subnet ID that was created and registered
 	 * @throws Exception - when there is no associated network from given IDs
 	 */
-	public long createNewSubnet(long tenantID, long networkID) throws Exception {
+	public long createNewSubnet(long tenantID, long networkID, String domainName) throws Exception {
 		Network network = controller.getNetworkFromID(tenantID, networkID);
 		if (network == null) {
 			//error finding network!!!!
 			throw new Exception();
 		}
-		long subnetID = network.registerNewSubnet();
+		long subnetID = network.registerNewSubnet(domainName);
 		
 		return subnetID;
 	}
@@ -57,6 +57,9 @@ public class APIHandler {
 			//error finding subnet!!!!
 			throw new Exception();
 		}
+		
+		//TODO make sure serverName is unique
+
 		
 		long serverID = subnet.registerNewServer(serverName);
 		return serverID;

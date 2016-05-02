@@ -29,8 +29,14 @@ public class SubnetAddress {
 	 * -> can specify subnet address with mask as follows
 	 * 
 	 * In an example case of 10.1.1.0/24
-	 * @param subnetAddress - should be 10.1.1.0
+	 * @param subnetAddress - should be 10.1.1.0 (network address)
 	 * @param mask - should be 24
+	 * 
+	 * This automatically sets as following:
+	 * + network 10.1.1.0
+	 * + netmask 255.255.255.0
+	 * + broadcast 10.1.1.255
+	 * + gateway 10.1.1.1
 	 * 
 	 * Reference: http://stackoverflow.com/questions/4209760/validate-an-ip-address-with-mask
 	 */
@@ -39,6 +45,45 @@ public class SubnetAddress {
 		this.mask = mask;
 		this.usedAddresses = new ArrayList<Inet4Address>();
 	}
+	
+	/* APIs */
+	
+	//TODO Implement
+
+	/**
+	 * Get network address
+	 * For a subnet of 10.1.1.0/24, it would be 10.1.1.0
+	 */
+	public Inet4Address getNetworkAddress() {
+		return null;
+	}
+	
+	/**
+	 * Get netmask
+	 * For a subnet of 10.1.1.0/24, it would be 255.255.255.0
+	 */
+	public Inet4Address getNetMask() {
+		return null;
+	}
+	
+	
+	/**
+	 * Get broadcast address
+	 * For a subnet of 10.1.1.0/24, it would be 10.1.1.255
+	 */
+	public Inet4Address getBroadcastAddress() {
+		return null;
+	}
+	
+	/**
+	 * Get gateway address
+	 * For a subnet of 10.1.1.0/24, it would be 10.1.1.1
+	 */
+	public Inet4Address getGatewayAddress() {
+		return null;
+	}
+	
+	
 	
 	
 	/**
