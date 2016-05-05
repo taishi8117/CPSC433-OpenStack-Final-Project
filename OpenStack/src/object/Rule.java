@@ -1,7 +1,7 @@
 package object;
 
 import java.util.HashMap;
-
+import java.net.Inet4Address;
 import lib.SubnetAddress;
 import project.Controller;
 
@@ -95,7 +95,7 @@ public class Rule {
     // When to remove a rule:
     //  - when you're done with a VM or deassociate a port with VM
 
-    @Override
+//    @Override
     public boolean equals(Rule other){
 //      TODO: COMPARE OTHER STUFF
         if (this == other) {

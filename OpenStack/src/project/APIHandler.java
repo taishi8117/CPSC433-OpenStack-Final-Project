@@ -3,6 +3,7 @@ package project;
 import object.Network;
 import object.Subnet;
 import object.VirtualServer;
+import java.net.HttpURLConnection;
 
 public class APIHandler {
 	private Controller controller;
@@ -47,10 +48,36 @@ public class APIHandler {
 		
 		return subnetID;
 	}
-	
-	
-	public long createNewPort() {
-		return 1;
+
+	/**
+	 * Creates a new port for a specified network.
+	 * Should be called when the corresponding API is called
+	 * @param number - port number desired (optional)
+	 *
+	 * @return long - port that was created and registered, or -1 if the port is already registered
+	 * @throws Exception - when there is no associated network from given IDs
+	 */
+	public long createNewPort(long tenantID, long networkID, int number) throws  Exception{
+		Network network = controller.getNetworkFromID(tenantID, networkID);
+		if (network == null) {
+			//error finding network!!!!
+			throw new Exception();
+		}
+		long portNum = network.registerNewPort(number);
+
+		return portNum;
+	}
+
+	// Create port with unspecified port number. (creates random number)
+	public int createNewPort(long tenantID, long networkID) throws  Exception{
+		Network network = controller.getNetworkFromID(tenantID, networkID);
+		if (network == null) {
+			//error finding network!!!!
+			throw new Exception();
+		}
+		int portNum = network.registerNewPort(0);
+
+		return portNum;
 	}
 	
 	public String listPort() {
