@@ -58,7 +58,11 @@ public class Network {
 		} while (subnetMap.containsKey(subnetID));
 		
 		// get currently available subnet address space
-		SubnetAddress subnetAddr = controller.getAvailableSubnetAddr();
+		SubnetAddress subnetAddr = controller.getAvailableSubnetAddr(subnetID);
+		if (subnetAddr == null) {
+			//TODO error handling
+			
+		}
 		
 		Subnet subnet = new Subnet(controller, this, subnetID, subnetAddr, domainName);
 		

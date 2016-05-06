@@ -1,8 +1,12 @@
 package project;
 
+import java.net.Inet4Address;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
+import lib.Debug;
 import lib.SubnetAddress;
 import object.DNS;
 import object.Network;
@@ -10,6 +14,10 @@ import object.Port;
 
 /**
  * Controller Instance
+ * 
+ * 
+ * Note that in this version, IPAddress of a range 192.168.(some number).0/24 is assigned
+ * for each subnet. IT IS HARCODED NOW!!!
  * @author TAISHI
  *
  */
@@ -24,33 +32,143 @@ public class Controller {
 
 	// maps portNums to Port instance
 	public HashMap<Integer, Port> portMap;
+	
+	// list of used subnet addresses (in the form of 192.168.(some number).0)
+	private ArrayList<Inet4Address> usedSubnetAddrList;
+	
+	// list of used bridge names
+	private ArrayList<String> usedBridgeNameList;
 
 	// Miscellaneous
 	public Random randomGen;
 
 
 	public Controller(HashMap<String,String> configMap) {
-		// TODO Auto-generated constructor stub
 		this.tenantMap = new HashMap<Long, HashMap<Long,Network>>();
 		this.randomGen = new Random();
 		this.dnsServer = new DNS();
 		this.configMap = configMap;
+		
+		this.usedSubnetAddrList = new ArrayList<>();
+		this.usedBridgeNameList = new ArrayList<>();
+		
+		
+		// 192.168.0.0 - 192.168.15.0 is illegal (reserved for host machine)
+		for (int i = 0; i < 16; i++) {
+			byte[] rawAddr = new byte[]{(byte) 192,(byte) 168,(byte) i, (byte) 0};
+			Inet4Address addr;
+			try {
+				addr = (Inet4Address) Inet4Address.getByAddress(rawAddr);
+			} catch (UnknownHostException e) {
+				// shouldn't happen
+				continue;
+			}
+			usedSubnetAddrList.add(addr);
+		}
+		
 	}
 
 
 
 	/**
 	 * Assigns available private address space for a subset.
+	 * Initialize SubnetAddress instance and returns it
 	 * Should be called when a new subnet is created to assign
 	 * the range of IP address
-	 * @return SubnetAddress
+	 * 
+	 * For the sake of simplicity, we only use 192.168.(available).0/24
+	 * where available is in the range of 15-255
+	 * @param subnetID 
+	 * @return SubnetAddress - initialized subnet address object on success, o.w. null
 	 */
-	public SubnetAddress getAvailableSubnetAddr() {
-		//TODO need to maintain the range of private IP address that is already used by some other networks
-		//TODO return available range of IP address as SubnetAddress instance
-		//TODO need to register that
+	public SubnetAddress getAvailableSubnetAddr(long subnetID) {
+		// maintain the range of private IP address that is already used by some other networks
+		// assign a unique bridge name for the subnet
+		// return available range of IP address as SubnetAddress instance
+		
+		byte[] rawSubnetAddr = new byte[4];
+		rawSubnetAddr[0] = (byte) 192;
+		rawSubnetAddr[1] = (byte) 168;
+		rawSubnetAddr[2] = (byte) 15;
+		rawSubnetAddr[3] = (byte) 0;
+
+		int mask = 24;
+		
+		for (int i = 15; i < 256; i++) {
+			rawSubnetAddr[2] = (byte) i;
+			Inet4Address subnetAddr;
+			
+			try {
+				subnetAddr = (Inet4Address) Inet4Address.getByAddress(rawSubnetAddr);
+			} catch (UnknownHostException e) {
+				// shouldn't happen
+				continue;
+			}
+			
+			if (!isSubnetAddrAlreadyRegistered(subnetAddr)) {
+				String bridgeName = assignNewSubnetBridgeName();
+				if (bridgeName == null) {
+					return null;
+				}
+
+				SubnetAddress sa;
+				try {
+					sa = new SubnetAddress(this, subnetAddr, mask, subnetID, bridgeName);
+				} catch (Exception e) {
+					Debug.redDebug("Error in creating SubnetAddress Instance");
+					return null;
+				}
+				return sa;
+			}
+		}
+		
 		return null;
 	}
+	
+	
+
+	/**
+	 * Assigns a new bridge name for subnet
+	 * @return bridge name on success, null on not available
+	 */
+	private String assignNewSubnetBridgeName() {
+		//TODO probably not gonna make more than 10000 subnets
+		for (int i = 0; i < 10000; i++) {
+			String name = "subnetbr" + i;
+			if (!isBridgeNameAlreadyRegistered(name)) {
+				usedBridgeNameList.add(name);
+				return name;
+			}
+		}
+		return null;
+	}
+
+
+
+	private boolean isSubnetAddrAlreadyRegistered(Inet4Address subnetAddr) {
+		if (usedSubnetAddrList.contains(subnetAddr)) {
+			return true;
+		}
+		return false;
+	}
+	
+	private boolean isBridgeNameAlreadyRegistered(String bridgeName) {
+		if (usedBridgeNameList.contains(bridgeName)) {
+			return true;
+		}
+		return false;
+	}
+
+	
+	/**
+	 * Deregisters SubnetAddress instance from this application
+	 * Should be called only from {@code destroySubnetAddress} method
+	 */
+	public void deregisterSubnetAddrFromController(SubnetAddress sa) {
+		usedSubnetAddrList.remove(sa.subnetAddress);
+		usedBridgeNameList.remove(sa.bridgeName);
+	}
+
 
 	/**
 	 * Assigns available port for a virtual server
@@ -132,7 +250,7 @@ public class Controller {
 		if (portNum == 0){
 			// randomly generate subnet ID until it finds a new one
 			do {
-				portNum = (int) controller.randomGen.nextLong();
+				portNum = (int) this.randomGen.nextLong();
 			} while (portMap.containsKey(portNum));
 		}
 		if (portMap.containsKey(portNum)) // specified port number is occupied

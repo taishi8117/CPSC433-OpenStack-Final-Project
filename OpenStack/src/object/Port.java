@@ -1,5 +1,7 @@
 package object;
 
+import project.Controller;
+
 public class Port {
 
 
@@ -22,7 +24,12 @@ public class Port {
         this.type = type;
     }
 
-    public void update(){
+    //TODO constructor called from Controller
+    public Port(int number, Controller controller) {
+		// TODO Auto-generated constructor stub
+	}
+
+	public void update(){
 
         return;
     }

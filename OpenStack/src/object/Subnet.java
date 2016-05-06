@@ -1,7 +1,6 @@
 package object;
 
 import java.net.Inet4Address;
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import lib.LinkLayerHandler;
@@ -80,7 +79,7 @@ public class Subnet {
 		Inet4Address ipAddr = subnetAddress.assignNewIPAddress();
 		if (ipAddr == null) {
 			//IP address not assignable!!!!!!
-			throw new Exception();
+			throw new Exception("IPAddress not assignable to the server: " + serverName);
 		}
 		server.assignDataIPAddr(ipAddr);
 		
@@ -95,8 +94,10 @@ public class Subnet {
 	 * @return
 	 */
 	public String getNetworkCfg() {
-		//TODO CHANGE!!!
-		return "bridge=br0,model=virtio";
+		//return "bridge=br0,model=virtio";
+		
+		String config = "bridge=" + subnetAddress.bridgeName + ",model=virtio"; 
+		return config;
 	}
 	
 	/**
