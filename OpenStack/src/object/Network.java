@@ -23,8 +23,6 @@ public class Network {
 	// maps subnetID to Subnet instance
 	private HashMap<Long, Subnet> subnetMap;
 
-	// maps portNums to Port instance
-	private HashMap<Long, Port> portMap;
 
 	/**
 	 * !!
@@ -82,28 +80,6 @@ public class Network {
 		return subnet;
 	}
 
-
-	/**
-	 * Registers a new open port to this network.
-	 * @return port number that was registered or -1 if already registered
-	 */
-	public int registerNewPort(int number) {
-		int portNum = number;
-		if (portNum == 0){
-			// randomly generate subnet ID until it finds a new one
-			do {
-				portNum = (int) controller.randomGen.nextLong();
-			} while (portMap.containsKey(portNum));
-		}
-
-		if (portMap.containsKey(portNum)) // specified port number is occupied
-			return -1;
-
-
-		Port port = new Port(number, this);
-
-		return number;
-	}
 
 
 }

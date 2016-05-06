@@ -28,17 +28,12 @@ public class Rule {
     //   - add to prerouting, postrouting
     // when you remove a rule, remove from iptable
 
-
-    // iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-    // iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j DNAT --to 172.31.0.23:80
-    // example of prerouting to run
-    // iptables -t nat -A PREROUTING -p tcp -d 192.168.102.37 --dport 422 -j DNAT --to 192.168.102.37:22
-
+    private Controller controller;
     private Chain type;
-    private Inet4Address hostAddress;
-    private Inet4Address VMAddress;
-    private int hostPort;
-    private int VMPort;
+    private Inet4Address upstreamAddress;
+    private Inet4Address downstreamAddress;
+    private int upstreamPort;
+    private int downstreamPort;
 
     /**
      * !!
@@ -46,22 +41,23 @@ public class Rule {
      */
 
 
-    public Rule(/*Chain chain,*/ Inet4Address hostAddress, int hostPort,
-                Inet4Address VMAddress, int VMPort) {
+    public Rule(Controller controller,/*Chain chain,*/ Inet4Address upstreamAddress, int upstreamPort,
+                Inet4Address downstreamAddress, int downstreamPort) {
         this.type = Chain.PREROUTING;//chain; // temp commented out
-        this.hostAddress=hostAddress;
-        this.VMAddress=VMAddress;
-        this.VMPort=VMPort;
-        this.hostPort=hostPort;
+        this.upstreamAddress=upstreamAddress;
+        this.downstreamAddress=downstreamAddress;
+        this.downstreamPort=downstreamPort;
+        this.upstreamPort=upstreamPort;
+        this.controller=controller;
         this.establishRule();
     }
 
     // Establishes the rules in iptable on NAT for both prerouting from and to the VM
     public void establishRule(){
-        String toVM = "iptables -t nat -A PREROUTING -p tcp -d "+ this.hostAddress+" --dport "+
-                this.hostPort +" -j DNAT --to "+ this.VMAddress +":"+this.VMPort;
-        String fromVM = "iptables -t nat -A PREROUTING -p tcp -d "+this.VMAddress+" --dport "+
-                this.VMPort +" -j DNAT --to "+ this.hostAddress +":"+this.hostPort;
+        String toVM = "iptables -t nat -A PREROUTING -p tcp -d "+ this.upstreamAddress+" --dport "+
+                this.upstreamPort +" -j DNAT --to "+ this.downstreamAddress +":"+this.downstreamPort;
+        String fromVM = "iptables -t nat -A PREROUTING -p tcp -d "+this.downstreamAddress+" --dport "+
+                this.downstreamPort +" -j DNAT --to "+ this.upstreamAddress +":"+this.upstreamPort;
 
         // todo: run these commands as sudo
 
@@ -72,20 +68,20 @@ public class Rule {
     // TODO: Run as sudo
     // Removes this rule from the IP tables
     public void destroyRule(){
-        String removetoVM = "iptables -t nat -D PREROUTING -p tcp -d "+ this.hostAddress+" --dport "+
-                this.hostPort +" -j DNAT --to "+ this.VMAddress +":"+this.VMPort;
-        String removefromVM = "iptables -t nat -D PREROUTING -p tcp -d "+this.VMAddress+" --dport "+
-                this.VMPort +" -j DNAT --to "+ this.hostAddress +":"+this.hostPort;
+        String removetoVM = "iptables -t nat -D PREROUTING -p tcp -d "+ this.upstreamAddress+" --dport "+
+                this.upstreamPort +" -j DNAT --to "+ this.downstreamAddress +":"+this.downstreamPort;
+        String removefromVM = "iptables -t nat -D PREROUTING -p tcp -d "+this.downstreamAddress+" --dport "+
+                this.downstreamPort +" -j DNAT --to "+ this.upstreamAddress +":"+this.upstreamPort;
         // TODO: Figure out how to run these scripts
     }
 
     // Removes this rule from the IP tables (specifying args)
-    public static void destroyRule(Inet4Address hostAddress, int hostPort,Inet4Address VMAddress,
-                                   int VMPort){
-        String removetoVM = "iptables -t nat -D PREROUTING -p tcp -d "+ hostAddress+" --dport "+
-                hostPort +" -j DNAT --to "+ VMAddress +":"+VMPort;
-        String removefromVM = "iptables -t nat -D PREROUTING -p tcp -d "+ VMAddress+" --dport "+
-                VMPort +" -j DNAT --to "+ hostAddress +":"+ hostPort;
+    public static void destroyRule(Inet4Address upstreamAddress, int upstreamPort,Inet4Address downstreamAddress,
+                                   int downstreamPort){
+        String removetoVM = "iptables -t nat -D PREROUTING -p tcp -d "+ upstreamAddress+" --dport "+
+                upstreamPort +" -j DNAT --to "+ downstreamAddress +":"+downstreamPort;
+        String removefromVM = "iptables -t nat -D PREROUTING -p tcp -d "+ downstreamAddress+" --dport "+
+                downstreamPort +" -j DNAT --to "+ upstreamAddress +":"+ upstreamPort;
     }
 
 
@@ -106,8 +102,6 @@ public class Rule {
         }
     }
 
-
-    //Use this to get the proper string to match to when finding which table entries to delete
     @Override
     public String toString(){
         return "null";

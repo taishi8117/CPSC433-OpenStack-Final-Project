@@ -7,7 +7,7 @@ import java.net.HttpURLConnection;
 
 public class APIHandler {
 	private Controller controller;
-	
+
 	/**
 	 * Creates a new tenant and network. Should be called when the corresponding API is called
 	 * @return long - tenantID
@@ -21,20 +21,20 @@ public class APIHandler {
 		}
 		return tenantID;
 	}
-	
+
 	/**
 	 * Delete a specified tenant and its associated resources
 	 */
 	public long deleteTenant(long tenantID) {
 		return 0;
-		
+
 	}
-	
-	
+
+
 	/**
 	 * Creates a new subnet for a specified tenantID and networkID.
 	 * Should be called when the corresponding API is called
-	 * 
+	 *
 	 * @return long - subnet ID that was created and registered
 	 * @throws Exception - when there is no associated network from given IDs
 	 */
@@ -45,7 +45,7 @@ public class APIHandler {
 			throw new Exception();
 		}
 		long subnetID = network.registerNewSubnet(domainName);
-		
+
 		return subnetID;
 	}
 
@@ -54,49 +54,62 @@ public class APIHandler {
 	 * Should be called when the corresponding API is called
 	 * @param number - port number desired (optional)
 	 *
-	 * @return long - port that was created and registered, or -1 if the port is already registered
+	 * @return int - port number that was created and registered,
+	 * 		   -1 - if the port is already registered
 	 * @throws Exception - when there is no associated network from given IDs
 	 */
-	public long createNewPort(long tenantID, long networkID, int number) throws  Exception{
+	public int createNewPort(long tenantID, long networkID, int number) throws  Exception{
 		Network network = controller.getNetworkFromID(tenantID, networkID);
 		if (network == null) {
 			//error finding network!!!!
 			throw new Exception();
 		}
-		long portNum = network.registerNewPort(number);
+		int portNum = controller.registerNewPort(number);
 
 		return portNum;
 	}
 
 	// Create port with unspecified port number. (creates random number)
-	public int createNewPort(long tenantID, long networkID) throws  Exception{
+	public int createNewPort(long tenantID, long networkID) throws Exception{
 		Network network = controller.getNetworkFromID(tenantID, networkID);
 		if (network == null) {
 			//error finding network!!!!
 			throw new Exception();
 		}
-		int portNum = network.registerNewPort(0);
-
+		int portNum = controller.registerNewPort(0);
 		return portNum;
 	}
-	
+
+	// Gets a list of occupied ports
 	public String listPort() {
-		return null;
-	}
-	
-	public String getPortDetails() {
-		return null;
-	}
-	
-	public long updatePort() {
-		return 0;
-	}
-	
-	public long deletePort() {
-		return 0;
+		String occupiedPorts= "Occupied Ports:";
+		for ( String port : controller.portMap.keySet() ) {
+			occupiedPorts+= key;
+			occupiedPorts+= " ";
+		}
+		return occupiedPorts;
 	}
 
-	
+	public String getPortDetails(int portNum) {
+		String details =controller.portMap.get(portNum);
+		if (details == null){
+			details = "";
+		}
+		return details;
+	}
+
+	public int updatePort(int portNum) {
+		// TODO: figure out update parameters
+		controller.portMap.get(portNum).update();
+		return portNum;
+	}
+
+	public int deletePort(int portNum){
+		controller.portMap.remove(portNum);
+		return portNum;
+	}
+
+
 	/**
 	 * Creates a new server for specified IDs
 	 * Should be called when the corresponding API is called
@@ -115,36 +128,36 @@ public class APIHandler {
 			//error finding subnet!!!!
 			throw new Exception();
 		}
-		
+
 		//TODO make sure serverName is unique
 
-		
+
 		long serverID = subnet.registerNewServer(serverName, password);
 		return serverID;
 	}
-	
+
 
 	public String listServers(long tenantID, long networkID, long subnetID) {
 		return null;
 	}
-	
+
 	/**
 	 * Returns the server details in XML form
 	 */
 	public String getServerDetails(long tenantID, long networkID, long subnetID, long serverID) {
-		
+
 		return null;
 	}
-	
+
 	public int startServer() {
 		return 1;
 	}
-	
+
 	public int stopServer() {
 		return 1;
 	}
-	
-	
-	
-	
+
+
+
+
 }
