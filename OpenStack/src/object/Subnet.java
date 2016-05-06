@@ -1,10 +1,13 @@
 package object;
 
 import java.net.Inet4Address;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import lib.LinkLayerHandler;
+import lib.MACAddress;
 import lib.SubnetAddress;
+import lib.VirtualNIC;
 import project.Controller;
 
 public class Subnet {
@@ -28,6 +31,10 @@ public class Subnet {
 	// domain name for this subnet (e.g. network.tenantName ?)
 	public String domainName;
 	
+	// map of Virtual NIC (= MAC address) in this subnet
+	// maps string representation of MAC address to VNIC
+	private HashMap<MACAddress, VirtualNIC> vnicMap;
+	
 
 	
 
@@ -43,6 +50,7 @@ public class Subnet {
 		this.domainName = domainName;
 		
 		this.linkHandler = new LinkLayerHandler();
+		this.vnicMap = new HashMap<>();
 
 	}
 	
@@ -50,11 +58,12 @@ public class Subnet {
 	/**
 	 * Registers a new server to this subnet.
 	 * It automatically finds an available IP address and assigns it (DHCP)
+	 * @param password 
 	 * @return server ID that was registered
 	 * @throws Exception - when IP address not assignable
 	 */
 	//TODO error handling when there is no available IP??
-	public long registerNewServer(String serverName) throws Exception {
+	public long registerNewServer(String serverName, String password) throws Exception {
 		long serverID;
 		// randomly generate subnet ID until it finds a new one
 		do {
@@ -64,7 +73,7 @@ public class Subnet {
 		// registers a new virtual server
 		String networkCfg = getNetworkCfg();
 		//TODO this needs to use more specified contstructor later
-		VirtualServer server = new VirtualServer(controller, this, serverID, serverName, networkCfg);
+		VirtualServer server = new VirtualServer(controller, this, serverID, serverName, password, networkCfg);
 		serverMap.put(serverID, server);
 
 		// assign an available IP address to the newly created server
@@ -86,7 +95,24 @@ public class Subnet {
 	 * @return
 	 */
 	public String getNetworkCfg() {
-		return "bridge=virbr0,model=virtio";
+		//TODO CHANGE!!!
+		return "bridge=br0,model=virtio";
+	}
+	
+	/**
+	 * Assign an new MAC address for a given virtual NIC and registers it internally
+	 */
+	public MACAddress registerNewVNIC(VirtualNIC virtualNIC) {
+		MACAddress macAddr;
+		
+		// randomly generate MAC Address until it finds a new one
+		do {
+			macAddr = MACAddress.getRandomMACAddr();
+		} while (vnicMap.containsKey(macAddr));
+		
+		vnicMap.put(macAddr, virtualNIC);
+		
+		return macAddr;
 	}
 	
 }

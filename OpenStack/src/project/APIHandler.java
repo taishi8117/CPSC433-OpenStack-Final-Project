@@ -23,9 +23,9 @@ public class APIHandler {
 	}
 	
 	/**
-	 * Delete a specified tenand and its associated resources
+	 * Delete a specified tenant and its associated resources
 	 */
-	public long deleteTenand(long tenantID) {
+	public long deleteTenant(long tenantID) {
 		return 0;
 		
 	}
@@ -103,7 +103,7 @@ public class APIHandler {
 	 * @return long - server ID that was created and registered
 	 * @throws Exception - when there is an errorrrrr
 	 */
-	public long createNewServer(long tenantID, long networkID, long subnetID, String serverName) throws Exception {
+	public long createNewServer(long tenantID, long networkID, long subnetID, String serverName, String password) throws Exception {
 		Network network = controller.getNetworkFromID(tenantID, networkID);
 		if (network == null) {
 			//error finding network!!!!
@@ -119,7 +119,7 @@ public class APIHandler {
 		//TODO make sure serverName is unique
 
 		
-		long serverID = subnet.registerNewServer(serverName);
+		long serverID = subnet.registerNewServer(serverName, password);
 		return serverID;
 	}
 	

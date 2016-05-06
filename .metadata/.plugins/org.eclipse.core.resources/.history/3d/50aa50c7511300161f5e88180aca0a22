@@ -1,0 +1,42 @@
+package lib;
+
+import java.util.Arrays;
+
+/**
+ * MAC Address object
+ * 
+ * Referenced from: https://github.com/wallnerryan/floodlight/blob/master/src/main/java/net/floodlightcontroller/util/MACAddress.java
+ * @author TAISHI
+ *
+ */
+public class MACAddress {
+	public static final int MAC_ADDRESS_LENGTH = 6;
+	private byte[] address = new byte[MAC_ADDRESS_LENGTH];
+	
+	public MACAddress(byte[] address) {
+		this.address = Arrays.copyOf(address, MAC_ADDRESS_LENGTH);
+	}
+	
+	public static MACAddress convertFromLong(long address) {
+		byte[] addressInBytes = new byte[] {
+                (byte)((address >> 40) & 0xff),
+                (byte)((address >> 32) & 0xff),
+                (byte)((address >> 24) & 0xff),
+                (byte)((address >> 16) & 0xff),
+                (byte)((address >> 8 ) & 0xff),
+                (byte)((address >> 0) & 0xff)
+        };
+
+        return new MACAddress(addressInBytes);
+	}
+
+	public static MACAddress getRandomMACAddr() {
+		return null;
+	}
+	
+	@Override
+	public String toString() {
+		// TODO Auto-generated method stub
+		return super.toString();
+	}
+}

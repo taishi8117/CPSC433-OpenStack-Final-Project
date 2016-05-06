@@ -1,16 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <qualifiedTypeNameHistroy>
-<fullyQualifiedTypeName name="project.Controller"/>
 <fullyQualifiedTypeName name="java.util.Random"/>
 <fullyQualifiedTypeName name="lib.LinkLayerHandler"/>
 <fullyQualifiedTypeName name="object.Network"/>
 <fullyQualifiedTypeName name="lib.SubnetAddress"/>
 <fullyQualifiedTypeName name="lib.VirtualNIC"/>
-<fullyQualifiedTypeName name="object.VirtualServer"/>
 <fullyQualifiedTypeName name="java.lang.Exception"/>
-<fullyQualifiedTypeName name="java.util.HashMap"/>
 <fullyQualifiedTypeName name="object.Subnet"/>
 <fullyQualifiedTypeName name="java.util.List"/>
 <fullyQualifiedTypeName name="java.util.ArrayList"/>
+<fullyQualifiedTypeName name="object.DNSServer"/>
+<fullyQualifiedTypeName name="object.DNS"/>
+<fullyQualifiedTypeName name="java.lang.ProcessBuilder"/>
+<fullyQualifiedTypeName name="lib.ReadConfig"/>
+<fullyQualifiedTypeName name="java.util.HashMap"/>
+<fullyQualifiedTypeName name="project.Controller"/>
+<fullyQualifiedTypeName name="lib.Debug"/>
 <fullyQualifiedTypeName name="java.net.Inet4Address"/>
+<fullyQualifiedTypeName name="java.lang.VirtualMachineError"/>
+<fullyQualifiedTypeName name="object.VirtualServer"/>
 </qualifiedTypeNameHistroy>

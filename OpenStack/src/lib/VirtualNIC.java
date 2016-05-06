@@ -2,6 +2,8 @@ package lib;
 
 import java.net.Inet4Address;
 
+import object.Subnet;
+
 /**
  * Virtual Network Interface --- can be owned by server or controller
  * It maintains IP address, MAC address, etc. who knows what
@@ -16,14 +18,21 @@ public class VirtualNIC {
 	// SubnetAddress instance of subnet to which this VNIC belong
 	public SubnetAddress subnetAddr;
 	
-	//TODO deal with MAC address
+	// Name of the interface
+	public String interfaceName;
+	
+	// Mac Address
+	public MACAddress macAddress;
 	
 	/**
 	 * Creates Data VNIC instance with subnet address
 	 * @param subnetAddr
 	 */
-	public VirtualNIC(SubnetAddress subnetAddr) {
-		this.subnetAddr = subnetAddr;
+	public VirtualNIC(Subnet parentSubnet, String interfaceName) {
+		this.subnetAddr = parentSubnet.subnetAddress;
+		this.macAddress = parentSubnet.registerNewVNIC(this);
+		this.interfaceName = interfaceName;
+
 	}
 	
 	
@@ -43,5 +52,12 @@ public class VirtualNIC {
 		this.ipAddr = address;
 	}
 
+	public boolean isIPAddrAssigned() {
+		if (ipAddr == null) {
+			return false;
+		}else {
+			return true;
+		}
+	}
 
 }

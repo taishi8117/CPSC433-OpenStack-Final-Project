@@ -6,6 +6,7 @@ import java.util.Random;
 import lib.SubnetAddress;
 import object.DNS;
 import object.Network;
+import object.Port;
 
 /**
  * Controller Instance
@@ -45,8 +46,21 @@ public class Controller {
 	public SubnetAddress getAvailableSubnetAddr() {
 		//TODO need to maintain the range of private IP address that is already used by some other networks
 		//TODO return available range of IP address as SubnetAddress instance
+		//TODO need to register that
 		return null;
 	}
+	
+	/**
+	 * Assigns available port for a virtual server
+	 * @return Port
+	 */
+	public Port getAvailablePort() {
+		//TODO need to maintain what ports are available
+		//TODO return available port as Port instance
+		//TODO need to register that
+		return null;
+	}
+	
 	
 	/**
 	 * Registers a new tenant to this controller

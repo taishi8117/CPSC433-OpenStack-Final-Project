@@ -1,0 +1,15 @@
+package lib;
+
+public class MACAddress {
+	public static final int MAC_ADDRESS_LENGTH = 6;
+
+	public static MACAddress getRandomMACAddr() {
+		return null;
+	}
+	
+	@Override
+	public String toString() {
+		// TODO Auto-generated method stub
+		return super.toString();
+	}
+}

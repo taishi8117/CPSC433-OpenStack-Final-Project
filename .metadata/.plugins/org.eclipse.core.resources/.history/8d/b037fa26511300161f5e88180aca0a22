@@ -1,0 +1,14 @@
+package lib;
+
+public class MACAddress {
+
+	public static MACAddress getRandomMACAddr() {
+		return null;
+	}
+	
+	@Override
+	public String toString() {
+		// TODO Auto-generated method stub
+		return super.toString();
+	}
+}

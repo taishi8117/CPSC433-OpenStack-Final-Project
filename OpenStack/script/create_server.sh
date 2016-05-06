@@ -3,8 +3,8 @@
 # Needs to be run as root
 #
 # Usage:
-#	# ./create_server.sh host domain disksize numcpu mem network metadata userdata
-# * host: the hostname of the server (needs to be unique)
+#	# ./create_server.sh instanceID domain disksize numcpu mem network metadata userdata
+# * instanceID: the instanceID of the server (needs to be unique)
 # * domain: the domain name in which the server is created
 # * disksize: the disk size for the server in GB
 # * numcpu: the number of CPUs allocated for the server
@@ -20,7 +20,7 @@
 # Requires `kvm_install.sh' to be run in advance
 
 if [ "$#" -ne 8 ]; then
-	echo "Usage: # ./create_server.sh host domain disksize numcpu mem network metadata userdata"
+	echo "Usage: # ./create_server.sh instantID domain disksize numcpu mem network metadata userdata"
 	exit 1
 fi
 

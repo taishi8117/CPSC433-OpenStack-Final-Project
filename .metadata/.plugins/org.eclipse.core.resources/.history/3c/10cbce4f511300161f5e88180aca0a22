@@ -1,0 +1,23 @@
+package lib;
+
+/**
+ * MAC Address object
+ * 
+ * Referenced from: https://github.com/wallnerryan/floodlight/blob/master/src/main/java/net/floodlightcontroller/util/MACAddress.java
+ * @author TAISHI
+ *
+ */
+public class MACAddress {
+	public static final int MAC_ADDRESS_LENGTH = 6;
+	private byte[] address 
+
+	public static MACAddress getRandomMACAddr() {
+		return null;
+	}
+	
+	@Override
+	public String toString() {
+		// TODO Auto-generated method stub
+		return super.toString();
+	}
+}
