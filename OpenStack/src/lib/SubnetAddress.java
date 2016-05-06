@@ -223,7 +223,10 @@ public class SubnetAddress {
 	 * are destroyed
 	 */
 	public void destroySubnetAddress() {
-		//TODO remove bridge for this subnet
+		// remove bridge for this subnet
+		if (destroyBridgeOnHost() == 0) {
+			//TODO error handling?
+		}
 		
 		// remove this from controller
 		controller.deregisterSubnetAddrFromController(this);
@@ -316,5 +319,35 @@ public class SubnetAddress {
 			}
 			return null;
 		}
+	}
+	
+	/**
+	 * Destroys a bridge on the host machine for this subnet, using destroy_subnet.sh
+	 * # Usage:
+	 *   ./destroy_subnet.sh networkCfgName
+	 *   Where {@code networkCfgName} is {@code subnetID}
+	 * @return 1 on success, 0 on error
+	 */
+	private int destroyBridgeOnHost() {
+		String locDestroyScript = scriptDirectory + "/destroy_subnet.sh";
+		
+		ProcessBuilder pb = new ProcessBuilder(locDestroyScript, Long.toString(subnetID));
+		try {
+			Process p = pb.start();
+			//TODO NEED TO BE ASYNCHRONOUSS
+			int exitStatus = p.waitFor();
+			if (exitStatus != 0) {
+				Debug.redDebug("Error while executing destroy_subnet.sh with exit status: " + exitStatus);
+				return 0;
+			}else {
+				return 1;
+			}
+			
+		} catch (Exception e) {
+			// error executing this script
+			Debug.redDebug("Error with destroying bridge on host machine -- couldn't run the script");
+			return 0;
+		}
+		
 	}
 }
