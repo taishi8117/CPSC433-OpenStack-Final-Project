@@ -77,7 +77,7 @@ public class Controller {
 	 * the range of IP address
 	 * 
 	 * For the sake of simplicity, we only use 192.168.(available).0/24
-	 * where available is in the range of 15-255
+	 * where available is in the range of 16-255
 	 * @param subnetID 
 	 * @return SubnetAddress - initialized subnet address object on success, o.w. null
 	 */
@@ -94,7 +94,7 @@ public class Controller {
 
 		int mask = 24;
 		
-		for (int i = 15; i < 256; i++) {
+		for (int i = 16; i < 256; i++) {
 			rawSubnetAddr[2] = (byte) i;
 			Inet4Address subnetAddr;
 			

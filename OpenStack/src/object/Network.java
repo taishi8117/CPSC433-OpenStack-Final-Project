@@ -12,8 +12,8 @@ public class Network {
 	}
 
 	// Tenant ID to which this network belong
-	public long tenantID;
-	public long networkID;
+	public final long tenantID;
+	public final long networkID;
 
 	private NetworkState state;
 	public String networkName;

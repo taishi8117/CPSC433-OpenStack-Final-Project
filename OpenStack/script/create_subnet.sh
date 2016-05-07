@@ -4,29 +4,22 @@
 # Needs to be run as root
 #
 # Usage:
-#   # ./create_subnet.sh networkCfg
-#  * networkCfg : Bridge interface configuration for libvirt (xml)
+#   # ./create_subnet.sh
+# List of Environment Variables
+# * CFGFILE : Bridge interface configuration for libvirt, should be in the form of "brcfg_" + subnetID + ".xml" 
+# * SUBNWNAME : The name of the subnet created, which should be subnetID
 #
 # Author: Taishi Nojima
-
-if [ "$#" -ne 1 ]; then
-	echo "Usage: # ./create_subnet.sh networkCfg"
-	exit 1
-fi
 
 # check if the script is run as root user
 if [[ $USER != "root" ]]; then
   echo "This script must be run as root!" && exit 1
 fi
 
-CFGFILE=$1
-#get the name of the network
-NWNAME="${CFGFILE%.*}"
-
 set -x
 
 virsh net-define --file $CFGFILE
-virsh net-start network2
+virsh net-start $SUBNWNAME
 
 virsh net-list
 

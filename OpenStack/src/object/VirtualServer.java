@@ -5,9 +5,11 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.net.Inet4Address;
+import java.util.ArrayList;
 import java.util.HashMap;
-
+import java.util.Iterator;
 
 import lib.Debug;
 import lib.VirtualNIC;
@@ -17,13 +19,15 @@ import project.Controller;
  * Instance that controlls a virtual server (Ubuntu 14.04 Cloud trusty)
  * Note that username is `ubuntu' and password login into ssh is enabled.
  * 
+ * 
  * @author TAISHI
  *
  */
 public class VirtualServer {
 	enum ServerState {
-		RUNNING,
-		SHUTDOWN,
+		CREATED,		//create_server.sh was executed
+		RUNNING,		//confirmed running at the last time getServerDetail() was called
+		SHUTDOWN,		 
 		NON_EXISTENT,	//init or destroyed
 		ERROR			//some weird thing happened
 	}
@@ -49,7 +53,7 @@ public class VirtualServer {
 	
 
 	public final String serverName;
-	public final String instanceId;
+	public final String instanceId; 	//for host system identification
 	
 	// password for the user `ubuntu'
 	// TODO this is stored in plaintext haha
@@ -71,6 +75,13 @@ public class VirtualServer {
 	private int numCpu;
 	private int memSize;
 	private String networkCfg;
+	
+	
+	// Map of the most recent executed processes for each key for this server
+	// Key needs to be one of the following
+	// "create" : create_server.sh process
+	// "destroy" : destroy_server.sh process
+	private HashMap<String, Process> processMap;
 	
 	
 	
@@ -102,6 +113,7 @@ public class VirtualServer {
 		this.controlNIC = new VirtualNIC();
 		
 		this.portMap = new HashMap<>();
+		this.processMap = new HashMap<>();
 		
 		this.scriptDirectory = controller.configMap.get("LocScript");
 	}
@@ -121,27 +133,30 @@ public class VirtualServer {
 	 * Creates a virtual machine using create_server.sh script
 	 * 
 	 * # create_server.sh : script to create a virtual server using Ubuntu 14.04 cloud image on kvm
-	 *	 Usage:
-	 *		# ./create_server.sh host domain disksize numcpu mem network metadata userdata
-	 *	 * host: the hostname of the server (needs to be unique) == serverName
-	 *	 * domain: the domain name in which the server is created
-	 *	 * disksize: the disk size for the server in GB
-	 *	 * numcpu: the number of CPUs allocated for the server
-	 *	 * mem: the amount of memory allocated for the server in MB
-	 *	 * network: the network configuration (VNIC) with no space
-	 *	 * metadata: the location of meta-data file
-	 *	 * userdata: the location of user-data file
+	 * 
+     *   Usage:
+     *  	# ./create_server.sh 
+     *   List of Environment Variables									-- In VirtualServer.java
+     *   * VSHOST: the instanceID of the server (needs to be unique)	-- instanceId
+     *   * VSDOMAIN: the domain name in which the server is created		-- parentSubnet.domainName
+     *   * VROOTDISKSIZE: the disk size for the server in GB			-- diskSize + "G" (e.g. "10G")
+     *   * VCPUS: the number of CPUs allocated for the server			-- numCpu
+     *   * VMEM: the amount of memory allocated for the server in MB	-- memSize
+     *   * VSNETWORK: the network configuration (VNIC) with no space	-- networkCfg
+     *   * METADATA_FILE: the location of meta-data file				-- locMetadata
+     *   * USERDATA_FILE: the location of user-data file				-- locUserdata
 	 *
 	 *	create_server.sh basically does following:
 	 *	 ** POOL is located in /home/vm
 	 *	 ** Image format is qcow2
-	 *
 	 *	 + download Ubuntu 14.04 cloud image 
 	 *	 + create ISO image from userdata + metadata files and copy it to the pool
 	 *   + create a virtual machine using virt-install
 	 *   + cleanup temporary files
+	 *   
+     *   THIS DOES NOT GUARANTEE THAT SERVER IS PROPERLY WORKING UNTIL {@code getServerDetail()} 
+     *   IS CALLED AND THE STATE IS CONFIRMED
 	 *
-	 *	@exception when error creating a virtual machine
 	 */
 	public void createVirtualMachine() throws Exception {
 		if (state != ServerState.NON_EXISTENT) {
@@ -164,21 +179,26 @@ public class VirtualServer {
 		}
 				
 		// need to change to string before passing them as arguments
-		ProcessBuilder pb = new ProcessBuilder(locCreateScript, instanceId, parentSubnet.domainName,
-												Integer.toString(diskSize), Integer.toString(numCpu),
-												Integer.toString(memSize), networkCfg,
-												locMetadata, locUserdata);
+		ProcessBuilder pb = new ProcessBuilder("/bin/bash", locCreateScript);
+		pb.environment().put("VSHOST", instanceId);
+		pb.environment().put("VSDOMAIN", parentSubnet.domainName);
+		pb.environment().put("VROOTDISKSIZE", Integer.toString(diskSize) + "G");
+		pb.environment().put("VCPUS", Integer.toString(numCpu));
+		pb.environment().put("VMEM", Integer.toString(memSize));
+		pb.environment().put("VSNETWORK", networkCfg);
+		pb.environment().put("METADATA_FILE", locMetadata);
+		pb.environment().put("USERDATA_FILE", locUserdata);
 		
-		Process p = pb.start();
-		//TODO NEED TO BE ASYNCHRONOUSSSSSSS
-		int exitStatus = p.waitFor();
-		if (exitStatus != 0) {
-			// error executing this script
-			Debug.redDebug("Error with createVirtualMachine, with exit status: " + exitStatus);
-			throw new Exception("Error running create_server.sh with exit code: " + exitStatus);
-		} else {
-			state = ServerState.RUNNING;
+		Process p;
+		try {
+			p = pb.start();
+
+			processMap.put("create", p);
+			state = ServerState.CREATED;
+		} catch (IOException e) {
+			throw new Exception("Error with executing create_server.sh");
 		}
+
 	}
 	
 	/**
@@ -338,7 +358,14 @@ public class VirtualServer {
 	
 	/**
 	 * Destroys a virtual machine using destroy_server.sh script
-	 * @throws Exception
+	 * 
+     * # destroy_server.sh : script to destroy a virtual server
+     * 
+     *  Usage:
+     *    # ./destroy_server.sh
+     *  List of Environment Variables
+     *  * VSHOST: the instance ID of the server
+     *  
 	 */
 	public void destroyVirtualMachine() throws Exception {
 		if (state == ServerState.NON_EXISTENT) {
@@ -347,22 +374,108 @@ public class VirtualServer {
 		
 		String locDestroyScript = scriptDirectory + "/destroy_server.sh";
 		
-		ProcessBuilder pb = new ProcessBuilder(locDestroyScript, instanceId);
-		Process p = pb.start();
-		//TODO NEED TO BE ASYNCHRONOUSSSSSSSS
-		int exitStatus = p.waitFor();
-		if (exitStatus != 0) {
-			// error executing this script
-			state = ServerState.ERROR;
-			Debug.redDebug("Error with createVirtualMachine, with exit status: " + exitStatus);
-			throw new Exception("Error running create_server.sh with exit code: " + exitStatus);
-		} else {
+		ProcessBuilder pb = new ProcessBuilder("/bin/bash", locDestroyScript);
+		pb.environment().put("VSHOST", instanceId);
+		
+		Process p;
+		try {
+			p = pb.start();
+			processMap.put("destroy", p);
+			
 			state = ServerState.NON_EXISTENT;
+		} catch (IOException e) {
+			throw new Exception("Error with executing destroy_server.sh");
+		}
+	}
+	
+	/**
+	 * Get the server detail. Needs to be run before a user can attempt to
+	 * access to this server directly. This confirms with the system if
+	 * the server is running, shutdown, or on error, and changes the state accordingly.
+	 * 
+	 * Returns HashMap object about the server, with following keys
+	 * [== if the server is not properly running or destroyed (error) ==]
+	 * + state : "non-existent"
+	 * 
+	 * [== if the server is either running or shutdown ==]
+	 * + state : "running" or "shutdown"
+	 * + name : server name
+	 * + id : server id
+	 * + username : "ubuntu"
+	 * + password : plaintext of the password for username "ubuntu"
+	 * + domain : domain name
+	 * + ipaddr : IP Address
+	 * + sshport : port number for SSH
+	 * + mac : MAC address of dataNIC
+	 * 
+	 * + disksize : disk size in GB
+	 * + numcpu : number of CPUs
+	 * + memsize : memory size in MB
+	 * 
+	 * + openport : list of open ports registered in portMap, separated by comma
+	 * 
+	 * @return
+	 */
+	//TODO password is given in plaintext haha
+	public HashMap<String, String> getServerDetail() {
+		HashMap<String, String> serverDetailMap = new HashMap<>();
+		if (state == ServerState.NON_EXISTENT) {
+			serverDetailMap.put("state", "non-existent");
 		}
 		
+		// checks if this server is properly running
+		int serverStatus = getServerStateFromSystem();
+
+		if (serverStatus == -1) {
+			// server non-existent
+			serverDetailMap.put("state", "non-existent");
+		}else {
+			if (serverStatus == 1) {
+				// server running
+				serverDetailMap.put("state", "running");
+			}else {
+				// server shutdown
+				serverDetailMap.put("state", "shutdown");
+			}
+			serverDetailMap.put("name", serverName);
+			serverDetailMap.put("id", Long.toString(serverID));
+			serverDetailMap.put("username", USERNAME);
+			serverDetailMap.put("password", password);
+			serverDetailMap.put("domain", parentSubnet.domainName);
+			serverDetailMap.put("ipaddr", dataNIC.ipAddr.getHostAddress());
+			serverDetailMap.put("sshport", Integer.toString(sshPort.num));
+			serverDetailMap.put("mac", dataNIC.macAddress.toString());
+
+			serverDetailMap.put("disksize", Integer.toString(diskSize));
+			serverDetailMap.put("numcpu", Integer.toString(numCpu));
+			serverDetailMap.put("memsize", Integer.toString(memSize));
+			
+			serverDetailMap.put("openport", getOpenPortList());
+		}
 		
-		
-		
+		return serverDetailMap;
 	}
+
+	private String getOpenPortList() {
+		Integer[] openPortList = (Integer[]) portMap.keySet().toArray();
+		StringBuilder openPortBuilder = new StringBuilder();
+		
+		for (int i = 0; i < openPortList.length; i++) {
+			openPortBuilder.append(openPortList[i].toString() + ",");
+		}
+		
+		return openPortBuilder.toString();
+	}
+
+	/**
+	 * Checks if the server is properly working, using check_server.sh script
+	 * 
+	 * @return 1 when server running, 0 when shutdown, -1 on non-existent
+	 */
+	private int getServerStateFromSystem() {
+		// TODO Auto-generated method stub
+		return -1;
+	}
+	
 
 }

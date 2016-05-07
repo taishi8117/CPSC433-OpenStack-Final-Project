@@ -3,7 +3,9 @@
 # Needs to be run as root
 #
 # Usage:
-#   # ./destroy_subnet.sh networkCfgName
+#   # ./destroy_subnet.sh
+# List of Environment Variables
+# * SUBNWNAME : The name of the subnet to destroy, which should be subnetID
 #
 # Author: Taishi Nojima
 

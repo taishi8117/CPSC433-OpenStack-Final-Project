@@ -3,42 +3,29 @@
 # Needs to be run as root
 #
 # Usage:
-#	# ./create_server.sh instanceID domain disksize numcpu mem network metadata userdata
-# * instanceID: the instanceID of the server (needs to be unique)
-# * domain: the domain name in which the server is created
-# * disksize: the disk size for the server in GB
-# * numcpu: the number of CPUs allocated for the server
-# * mem: the amount of memory allocated for the server in MB
-# * network: the network configuration (VNIC) with no space
-# * metadata: the location of meta-data file
-# * userdata: the location of user-data file
+#	# ./create_server.sh 
+# List of Environment Variables									-- In VirtualServer.java
+# * VSHOST: the instanceID of the server (needs to be unique)	-- instanceId
+# * VSDOMAIN: the domain name in which the server is created		-- parentSubnet.domainName
+# * VROOTDISKSIZE: the disk size for the server in GB			-- diskSize + "G" (e.g. "10G")
+# * VCPUS: the number of CPUs allocated for the server			-- numCpu
+# * VMEM: the amount of memory allocated for the server in MB	-- memSize
+# * VSNETWORK: the network configuration (VNIC) with no space	-- networkCfg
+# * METADATA_FILE: the location of meta-data file				-- locMetadata
+# * USERDATA_FILE: the location of user-data file				-- locUserdata
 #
+# Note that this script DOES NOT check if all environment variables are set properly
 #
 # Author : Taishi Nojima
 # Referenced from https://github.com/clauded/virt-tools/blob/master/virt-install-cloud.sh
 #
 # Requires `kvm_install.sh' to be run in advance
 
-if [ "$#" -ne 8 ]; then
-	echo "Usage: # ./create_server.sh instantID domain disksize numcpu mem network metadata userdata"
-	exit 1
-fi
-
 set -x
 
 # assumes that ubuntu 14.04 (trusty) on amd64
 IMG="trusty"
 ARCH="amd64"
-
-# arguments
-HOST=$1
-DOMAIN=$2
-VROOTDISKSIZE="${3}G"
-VCPUS=$4
-VMEM=$5
-NETWORK=$6
-METADATA_FILE=$7
-USERDATA_FILE=$8
 
 # image format: qcow2
 FORMAT=qcow2
@@ -88,10 +75,10 @@ fi
 # write the two cloud-init files into an ISO
 genisoimage -output configuration.iso -volid cidata -joliet -rock ${USERDATA_FILE} ${METADATA_FILE}
 # keep a backup of the files for future reference
-cp ${USERDATA_FILE} ${POOL_PATH}/user-data.${HOST}
-cp ${METADATA_FILE} ${POOL_PATH}/meta-data.${HOST}
+cp ${USERDATA_FILE} ${POOL_PATH}/user-data.${VSHOST}
+cp ${METADATA_FILE} ${POOL_PATH}/meta-data.${VSHOST}
 # copy ISO into libvirt's directory
-cp configuration.iso ${POOL_PATH}/${HOST}.configuration.iso
+cp configuration.iso ${POOL_PATH}/${VSHOST}.configuration.iso
 virsh pool-refresh ${POOL}
 
 # copy image to libvirt's pool
@@ -101,20 +88,20 @@ if [[ ! -f ${POOL_PATH}/${IMG_NAME} ]]; then
 fi
 
 # clone cloud image
-virsh vol-clone --pool ${POOL} ${IMG_NAME} ${HOST}.root.img
-virsh vol-resize --pool ${POOL} ${HOST}.root.img ${VROOTDISKSIZE}
+virsh vol-clone --pool ${POOL} ${IMG_NAME} ${VSHOST}.root.img
+virsh vol-resize --pool ${POOL} ${VSHOST}.root.img ${VROOTDISKSIZE}
 
-echo "Creating host ${HOST}..."
+echo "Creating host ${VSHOST}..."
 virt-install \
-  --name ${HOST} \
+  --name ${VSHOST} \
   --ram ${VMEM} \
   --vcpus=${VCPUS} \
   --autostart \
   --memballoon virtio \
-  --network ${NETWORK} \
+  --network ${VSNETWORK} \
   --boot hd \
-  --disk vol=${POOL}/${HOST}.root.img,format=${FORMAT},bus=virtio \
-  --disk vol=${POOL}/${HOST}.configuration.iso,bus=virtio \
+  --disk vol=${POOL}/${VSHOST}.root.img,format=${FORMAT},bus=virtio \
+  --disk vol=${POOL}/${VSHOST}.configuration.iso,bus=virtio \
   --noautoconsole
 
 

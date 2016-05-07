@@ -10,7 +10,7 @@ import lib.VirtualNIC;
 import project.Controller;
 
 public class Subnet {
-	public long subnetID;
+	public final long subnetID;
 	
 	// network to which this subnet belongs
 	private Network parentNetwork;	

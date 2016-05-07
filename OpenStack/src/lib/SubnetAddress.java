@@ -7,13 +7,13 @@ import java.net.Inet4Address;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import project.Controller;
 
 /**
- * Instance that defines the range of IP addresses as well as
- * the gateway address for Subnet
+ * Instance that defines the range of IP addresses as well as the gateway address for Subnet
  * This class is also responsible for making a bridge on the host machine for the subnet
  * 
  * 
@@ -26,8 +26,16 @@ import project.Controller;
  *
  */
 public class SubnetAddress {
+	enum BridgeState {
+		NON_EXISTENT,
+		CREATED,
+		RUNNING,
+	}
+
 	public final Inet4Address subnetAddress;
 	private int mask;
+	private BridgeState state;
+	
 
 	// list of IP addresses that are already in use
 	private List<Inet4Address> usedAddresses;
@@ -36,11 +44,16 @@ public class SubnetAddress {
 	private String scriptDirectory;
 	
 	// ID of the parent subnet
-	private long subnetID;
+	private final long subnetID;
 	
 	// Bridge name for the bridge on the host for this subnet address
 	public String bridgeName;
 
+	// Map of the most recent executed processes for each key for this server
+	// Key needs to be one of the following
+	// "create" : create_subnet.sh process
+	// "destroy" : destroy_subnet.sh process
+	private HashMap<String, Process> processMap;
 	
 	/**
 	 * Creates a SubnetAddress instance
@@ -64,6 +77,7 @@ public class SubnetAddress {
 		this.subnetAddress = subnetAddress;
 		this.mask = mask;
 		this.usedAddresses = new ArrayList<Inet4Address>();
+		this.state = BridgeState.NON_EXISTENT;
 		
 		//add broadcast and gateway to usedAddress
 		this.usedAddresses.add(getNetworkAddress());
@@ -74,6 +88,7 @@ public class SubnetAddress {
 		this.bridgeName = bridgeName;
 
 		this.scriptDirectory = controller.configMap.get("LocScript");
+		this.processMap = new HashMap<>();
 		
 		// create bridge on host machine
 		if (createBridgeOnHost() == 0) {
@@ -234,38 +249,42 @@ public class SubnetAddress {
 	
 	/**
 	 * Creates a new bridge on the host machine for this subnet, using create_subnet.sh script
-	 * # Usage:
-     *   # ./create_subnet.sh networkCfg
-     * 	  * networkCfg : Bridge interface configuration for libvirt (xml)
+	 * 
+     *   Usage:
+     *     # ./create_subnet.sh
+     *   List of Environment Variables
+     *   * CFGFILE : Bridge interface configuration for libvirt, should be in the form of "brcfg_" + subnetID + ".xml" 
+     *   * SUBNWNAME : The name of the subnet created, which should be subnetID
+     *   
+     *   THIS DOES NOT GUARANTEE THAT BRIDGE IS PROPERLY WORKING UNTIL {@code getSubnetAddressDetail} 
+     *   IS CALLED AND THE STATE IS CONFIRMED
 	 * 
 	 * @return 1 on success, 0 on error
 	 */
 	private int createBridgeOnHost() {
 		
 		//create bridge configuration (xml file)
-		String bridgeCfgPath = createBridgeConfig();
-		if (bridgeCfgPath == null) {
+		File bridgeCfgFile = createBridgeConfig();
+		if (bridgeCfgFile == null) {
 			return 0;
 		}
 		
 		String locCreateScript = scriptDirectory + "/create_subnet.sh";
 		
-		ProcessBuilder pb = new ProcessBuilder(locCreateScript, bridgeCfgPath);
+		ProcessBuilder pb = new ProcessBuilder("/bin/bash", locCreateScript);
+		pb.environment().put("CFGFILE", bridgeCfgFile.getAbsolutePath());
+		pb.environment().put("SUBNWNAME", Long.toString(subnetID));
 
+		Process p;
 		try {
-			Process p = pb.start();
-			//TODO NEED TO BE ASYNCHRONOUSS
-			int exitStatus = p.waitFor();
-			if (exitStatus != 0) {
-				Debug.redDebug("Error while executing create_subnet.sh with exit status: " + exitStatus);
-				return 0;
-			}else {
-				return 1;
-			}
+			p = pb.start();
 			
+			processMap.put("create", p);
+			state = BridgeState.CREATED;
+			
+			return 1;
 		} catch (Exception e) {
-			// error executing this script
-			Debug.redDebug("Error with create bridge on host machine -- couldn't run the script");
+			Debug.redDebug("Error with executing create_subnet.sh");
 			return 0;
 		}
 	}
@@ -285,9 +304,9 @@ public class SubnetAddress {
      *   
      * NOTE that bridge name needs to be unique, and should be confirmed by controller
      * 
-     * @return String - path to the created config in String on success, or null on error
+     * @return File - File instance of the created config in String on success, or null on error
 	 */
-	private String createBridgeConfig() {
+	private File createBridgeConfig() {
 		StringBuilder bridgeCfgBuilder = new StringBuilder();
 		bridgeCfgBuilder.append("<network>\n")
 						.append("  <name>" + subnetID + "</name>\n")
@@ -312,7 +331,7 @@ public class SubnetAddress {
 			bw.write(bridgeCfgBuilder.toString());
 			bw.close();
 
-			return location;
+			return file;
 		} catch (Exception e) {
 			if (Debug.IS_DEBUG) {
 				e.printStackTrace();
@@ -323,31 +342,87 @@ public class SubnetAddress {
 	
 	/**
 	 * Destroys a bridge on the host machine for this subnet, using destroy_subnet.sh
-	 * # Usage:
-	 *   ./destroy_subnet.sh networkCfgName
-	 *   Where {@code networkCfgName} is {@code subnetID}
+     *   Usage:
+     *     # ./destroy_subnet.sh
+     *   List of Environment Variables
+     *   * SUBNWNAME : The name of the subnet to destroy, which should be subnetID
+     *   
 	 * @return 1 on success, 0 on error
 	 */
 	private int destroyBridgeOnHost() {
+		if (state == BridgeState.NON_EXISTENT) {
+			Debug.debug("destroyBridgeOnHost() called when subnet doesn't exist");
+			return 0;
+		}
 		String locDestroyScript = scriptDirectory + "/destroy_subnet.sh";
 		
 		ProcessBuilder pb = new ProcessBuilder(locDestroyScript, Long.toString(subnetID));
+		pb.environment().put("SUBNWNAME", Long.toString(subnetID));
+		
+		Process p;
 		try {
-			Process p = pb.start();
-			//TODO NEED TO BE ASYNCHRONOUSS
-			int exitStatus = p.waitFor();
-			if (exitStatus != 0) {
-				Debug.redDebug("Error while executing destroy_subnet.sh with exit status: " + exitStatus);
-				return 0;
-			}else {
-				return 1;
-			}
+			p = pb.start();
+			processMap.put("destroy", p);
 			
+			state = BridgeState.NON_EXISTENT;
+			return 1;
 		} catch (Exception e) {
-			// error executing this script
-			Debug.redDebug("Error with destroying bridge on host machine -- couldn't run the script");
+			Debug.redDebug("Error with executing destroy_subnet.sh");
 			return 0;
 		}
-		
 	}
+	
+	/**
+	 * Get the subnet address detail. Needs to be run before a user can attempt to
+	 * create a server within the subnet. This confirms with the system if 
+	 * the bridge for this subnet is properly created, and changes the state accordingly.
+	 * 
+	 * Returns HashMap object about the subnet, with following keys 
+	 * [== if the bridge was not created properly (error) ==]
+	 * + state : "non-existent"
+	 * 
+	 * [== if the bridge was created properly, and the subnet is properly running ==]
+	 * + state : "running"
+	 * + network_address : network address of this subnet
+	 * + netmask : netmask of this subnet
+	 * + broadcast_address : broadcast address of this subnet
+	 * + gateway_address : gateway address of this subent
+	 * + num_ip : number of IP addresses already registered (incl. network, broadcast, gateway)
+	 * + bridge : name of the bridge for this subnet
+	 */
+	public HashMap<String, String> getSubnetAddressDetail() {
+		HashMap<String, String> subnetDetailMap = new HashMap<>();
+		if (state == BridgeState.NON_EXISTENT) {
+			subnetDetailMap.put("state", "non-existent");
+		}
+		
+		// checks if this subnet is properly running
+		if (isBridgeRunning()) {
+			state = BridgeState.RUNNING;
+			subnetDetailMap.put("state", "running");
+			subnetDetailMap.put("network_address", getNetworkAddress().getHostAddress());
+			subnetDetailMap.put("netmask", getNetMask().getHostAddress());
+			subnetDetailMap.put("broadcast_address", getBroadcastAddress().getHostAddress());
+			subnetDetailMap.put("gateway_address", getGatewayAddress().getHostAddress());
+			subnetDetailMap.put("num_ip", Integer.toString(usedAddresses.size()));
+			subnetDetailMap.put("bridge", bridgeName);
+			
+		}else {
+			state = BridgeState.NON_EXISTENT;
+			subnetDetailMap.put("state", "non-existent");
+		}
+		
+		return subnetDetailMap;
+	}
+
+	
+	/**
+	 * Checks if the bridge is properly working, using check_bridge.sh script
+	 */
+	private boolean isBridgeRunning() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	
+	
 }
