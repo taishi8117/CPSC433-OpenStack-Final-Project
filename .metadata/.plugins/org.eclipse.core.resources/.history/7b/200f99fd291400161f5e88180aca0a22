@@ -122,12 +122,10 @@ public class VirtualServer {
 	/**
 	 * Assigns an IP address to data NIC. Should be called when dealing with DHCP
 	 * @param address
-	 * @throws Exception 
 	 */
-	public void assignDataIPAndCreateVM(Inet4Address address) throws Exception {
+	public void assignDataIPAddr(Inet4Address address) {
 		//TODO error handling
 		this.dataNIC.assignIPAddr(address);
-		this.createVirtualMachine();
 	}
 	
 	
@@ -160,7 +158,7 @@ public class VirtualServer {
      *   IS CALLED AND THE STATE IS CONFIRMED
 	 *
 	 */
-	private void createVirtualMachine() throws Exception {
+	public void createVirtualMachine() throws Exception {
 		if (state != ServerState.NON_EXISTENT) {
 			throw new Exception("Server already exists");
 		}

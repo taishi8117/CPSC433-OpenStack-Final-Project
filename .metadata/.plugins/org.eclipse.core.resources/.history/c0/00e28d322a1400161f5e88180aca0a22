@@ -397,8 +397,8 @@ public class SubnetAddress {
 		}
 		
 		// checks if this subnet is properly running
-		updateBridgeStatus();
-		if (state == BridgeState.RUNNING) {
+		if (isBridgeRunning()) {
+			state = BridgeState.RUNNING;
 			subnetDetailMap.put("state", "running");
 			subnetDetailMap.put("network_address", getNetworkAddress().getHostAddress());
 			subnetDetailMap.put("netmask", getNetMask().getHostAddress());
@@ -406,7 +406,9 @@ public class SubnetAddress {
 			subnetDetailMap.put("gateway_address", getGatewayAddress().getHostAddress());
 			subnetDetailMap.put("num_ip", Integer.toString(usedAddresses.size()));
 			subnetDetailMap.put("bridge", bridgeName);
+			
 		}else {
+			state = BridgeState.NON_EXISTENT;
 			subnetDetailMap.put("state", "non-existent");
 		}
 		
@@ -416,17 +418,11 @@ public class SubnetAddress {
 	
 	/**
 	 * Checks if the bridge is properly working, using check_bridge.sh script
-	 * Then, updates state 
 	 */
-	public boolean updateBridgeStatus() {
+	private boolean isBridgeRunning() {
 		// TODO Auto-generated method stub
-		boolean running = false;
-		if (running) {
-			state = BridgeState.RUNNING;
-			return true;
-		}else {
-			state = BridgeState.NON_EXISTENT;
-			return false;
-		}
+		return false;
 	}
+	
+	
 }

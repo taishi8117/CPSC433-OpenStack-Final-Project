@@ -416,7 +416,7 @@ public class SubnetAddress {
 	
 	/**
 	 * Checks if the bridge is properly working, using check_bridge.sh script
-	 * Then, updates state 
+	 * Changes state as well
 	 */
 	public boolean updateBridgeStatus() {
 		// TODO Auto-generated method stub

@@ -84,7 +84,7 @@ public class Subnet {
 			//IP address not assignable!!!!!!
 			throw new Exception("IPAddress not assignable to the server: " + serverName);
 		}
-		server.assignDataIPAndCreateVM(ipAddr);
+		server.assignDataIPAndCreateVM(ipAddr)
 		
 		return serverID;
 	}
@@ -121,7 +121,8 @@ public class Subnet {
 
 
 	private boolean isRunning() {
-		return subnetAddress.updateBridgeStatus();
+		// TODO Auto-generated method stub
+		return false;
 	}
 	
 }
