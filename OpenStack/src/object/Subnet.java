@@ -121,7 +121,7 @@ public class Subnet {
 
 
 	private boolean isRunning() {
-		return subnetAddress.updateBridgeStatus();
+		return subnetAddress.isRunning();
 	}
 	
 }

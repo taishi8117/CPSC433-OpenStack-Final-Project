@@ -1,14 +1,20 @@
 package lib;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.InputStreamReader;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import project.Controller;
 
@@ -21,6 +27,10 @@ import project.Controller;
  * Every Inet4Address this class ever uses needs to be created by using {@code InetAddress.getByAddress(ipAddr)} 
  * where ipAddr is byte[] specifying 4 parts of IP addresses
  * 
+ * This class ASSUMES that it takes at least 500ms to create a bridge on the host machine.
+ * Thus, one cannot create a virtual server within the subnet until after at least 500ms.
+ * The state is checked every 1 second whether the bridge is properly created
+ * 
  * Reference: http://stackoverflow.com/questions/4209760/validate-an-ip-address-with-mask
  * @author TAISHI
  *
@@ -31,6 +41,7 @@ public class SubnetAddress {
 		CREATED,
 		RUNNING,
 	}
+	
 
 	public final Inet4Address subnetAddress;
 	private int mask;
@@ -54,6 +65,11 @@ public class SubnetAddress {
 	// "create" : create_subnet.sh process
 	// "destroy" : destroy_subnet.sh process
 	private HashMap<String, Process> processMap;
+	
+	// synchronizing state with the host system
+	private static final int DEFAULT_CHECK_INTERVAL = 1000;
+	Timer updateTimer;
+	UpdateStateTask updateTask;
 	
 	/**
 	 * Creates a SubnetAddress instance
@@ -89,6 +105,9 @@ public class SubnetAddress {
 
 		this.scriptDirectory = controller.configMap.get("LocScript");
 		this.processMap = new HashMap<>();
+		
+		this.updateTimer = new Timer();
+		this.updateTask = new UpdateStateTask();
 		
 		// create bridge on host machine
 		if (createBridgeOnHost() == 0) {
@@ -249,6 +268,8 @@ public class SubnetAddress {
 	
 	/**
 	 * Creates a new bridge on the host machine for this subnet, using create_subnet.sh script
+	 * Also, starts the {@code updateTimer} so as to synchronize the state of the bridge
+	 * with the host system
 	 * 
      *   Usage:
      *     # ./create_subnet.sh
@@ -282,6 +303,8 @@ public class SubnetAddress {
 			processMap.put("create", p);
 			state = BridgeState.CREATED;
 			
+			// start the timer
+			updateTimer.schedule(updateTask, 500, DEFAULT_CHECK_INTERVAL);
 			return 1;
 		} catch (Exception e) {
 			Debug.redDebug("Error with executing create_subnet.sh");
@@ -364,6 +387,8 @@ public class SubnetAddress {
 			p = pb.start();
 			processMap.put("destroy", p);
 			
+			updateTask.destroyCalled();
+			updateTimer.cancel();
 			state = BridgeState.NON_EXISTENT;
 			return 1;
 		} catch (Exception e) {
@@ -397,7 +422,6 @@ public class SubnetAddress {
 		}
 		
 		// checks if this subnet is properly running
-		updateBridgeStatus();
 		if (state == BridgeState.RUNNING) {
 			subnetDetailMap.put("state", "running");
 			subnetDetailMap.put("network_address", getNetworkAddress().getHostAddress());
@@ -413,20 +437,121 @@ public class SubnetAddress {
 		return subnetDetailMap;
 	}
 
-	
-	/**
-	 * Checks if the bridge is properly working, using check_bridge.sh script
-	 * Then, updates state 
-	 */
-	public boolean updateBridgeStatus() {
-		// TODO Auto-generated method stub
-		boolean running = false;
-		if (running) {
-			state = BridgeState.RUNNING;
+	public boolean isRunning() {
+		if (state == BridgeState.RUNNING) {
 			return true;
-		}else {
-			state = BridgeState.NON_EXISTENT;
+		} else {
 			return false;
 		}
 	}
+	
+	
+	/**
+	 * Callback function for when the bridge was in fact non-existent,
+	 * meaning that there is an ERRORR
+	 */
+	private void foundNonExistent() {
+		state = BridgeState.NON_EXISTENT;
+		updateTask.destroyCalled();
+		updateTimer.cancel();
+	}
+	
+	/**
+	 * Callback function for when the bridge was found to be properly working
+	 */
+	private void foundRunning() {
+		if (state == BridgeState.RUNNING || state == BridgeState.CREATED) {
+			state = BridgeState.RUNNING;
+		}
+	}
+	
+	
+	/**
+	 * Helper class for SubnetAddress that updates the state by
+	 * checking the bridge state with the host system, using check_bridge.sh script
+	 * 
+	 * Note that this task is blocking, since it waits for the result of the script
+	 * 
+	 * When state == CREATED, this state doesn't change to NON-EXISTENT for the first 5 calls (5 seconds)
+	 * even if active network isn't found
+	 * 
+	 * The output of check_bridge.sh is expected as following:
+     *    Name                 State      Autostart     Persistent
+     *   ----------------------------------------------------------
+     *    {subnetId}          active     no            yes
+	 * 
+	 * @author TAISHI
+	 */
+	class UpdateStateTask extends TimerTask {
+		boolean isDestroyed;
+		ProcessBuilder pb;
+		private final Matcher activeRegex;
+		private int numberCalls;
+		
+		public UpdateStateTask() {
+			numberCalls = 0;
+			isDestroyed = false;
+			String locCheckScript = scriptDirectory + "/check_bridge.sh";
+			pb = new ProcessBuilder("/bin/bash", locCheckScript);
+			
+			activeRegex = Pattern.compile("\\s*" + subnetID + "\\s+([^\\s]*).").matcher("");
+		}
+
+		@Override
+		public void run() {
+			numberCalls++;
+			if (isDestroyed) {
+				foundNonExistent();
+				return;
+			}
+			
+			try {
+				Process p = pb.start();
+				// blocking operation
+				BufferedReader buffer = new BufferedReader(new InputStreamReader(p.getInputStream()));
+				String line;
+
+				while ((line = buffer.readLine()) != null) {
+					if (activeRegex.reset(line).find()) {
+						// found the network name
+						String status = activeRegex.group(1).trim();
+
+						if (status.equals("active")) {
+							// it was active!
+							if (!isDestroyed) {
+								foundRunning();
+							}else {
+								foundNonExistent();
+							}
+							return;
+						}else {
+							//not active
+							if (state == BridgeState.CREATED && numberCalls < 6) {
+								return;
+							}else {
+								foundNonExistent();
+								return;
+							}
+						}
+					}
+				}
+				
+				// not found such network
+				if (state == BridgeState.CREATED && numberCalls < 6) {
+					return;
+				}else {
+					foundNonExistent();
+					return;
+				}
+			} catch (Exception e) {
+				Debug.redDebug("Error executing check_bridge.sh");
+			}
+		}
+		
+		public void destroyCalled() {
+			isDestroyed = true;
+		}
+	}
+	
 }
+

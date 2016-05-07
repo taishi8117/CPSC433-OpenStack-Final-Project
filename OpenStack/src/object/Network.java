@@ -83,7 +83,4 @@ public class Network {
 
 		return subnet;
 	}
-
-
-
 }

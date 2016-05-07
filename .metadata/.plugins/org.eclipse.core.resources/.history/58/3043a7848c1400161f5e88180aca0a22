@@ -1,0 +1,19 @@
+package lib;
+
+import java.util.TimerTask;
+
+/**
+ * Helper class for SubnetAddress class that updates the state by checking
+ * the bridge state from the host system
+ * @author TAISHI
+ *
+ */
+public class UpdateSubnetAddressState extends TimerTask {
+
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+
+	}
+
+}

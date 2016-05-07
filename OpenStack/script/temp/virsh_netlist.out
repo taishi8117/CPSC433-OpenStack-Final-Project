@@ -1,0 +1,6 @@
+ Name                 State      Autostart     Persistent
+----------------------------------------------------------
+ network12345678901234567890 active     no            yes
+ network2             active     no            yes
+ openstack            active     yes           yes
+

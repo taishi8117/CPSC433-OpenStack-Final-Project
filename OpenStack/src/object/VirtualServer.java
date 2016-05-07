@@ -6,10 +6,14 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.Inet4Address;
-import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import lib.Debug;
 import lib.VirtualNIC;
@@ -61,7 +65,7 @@ public class VirtualServer {
 
 	// Virtual network interfaces
 	private VirtualNIC dataNIC;
-	private VirtualNIC controlNIC;		//need IP address???
+	//private VirtualNIC controlNIC;		//need IP address???
 	
 	// Ports that are connected to this Virtual Server
 	// maps from port number to Port instance
@@ -82,6 +86,13 @@ public class VirtualServer {
 	// "create" : create_server.sh process
 	// "destroy" : destroy_server.sh process
 	private HashMap<String, Process> processMap;
+	
+	
+	// synchronizing state with the host system (KVM manager)
+	private static final int DEFAULT_CHECK_INTERVAL = 500;
+	Timer updateTimer;
+	UpdateStateTask updateTask;
+	
 	
 	
 	
@@ -110,12 +121,15 @@ public class VirtualServer {
 		
 		//TODO configuration of virtual NIC
 		this.dataNIC = new VirtualNIC(parentSubnet, DATA_NIC_NAME);
-		this.controlNIC = new VirtualNIC();
+		//this.controlNIC = new VirtualNIC();
 		
 		this.portMap = new HashMap<>();
 		this.processMap = new HashMap<>();
 		
 		this.scriptDirectory = controller.configMap.get("LocScript");
+		
+		this.updateTimer = new Timer();
+		this.updateTask = new UpdateStateTask();
 	}
 
 	
@@ -197,6 +211,10 @@ public class VirtualServer {
 
 			processMap.put("create", p);
 			state = ServerState.CREATED;
+			
+			// start the timer
+			updateTimer.schedule(updateTask, DEFAULT_CHECK_INTERVAL, DEFAULT_CHECK_INTERVAL);
+
 		} catch (IOException e) {
 			throw new Exception("Error with executing create_server.sh");
 		}
@@ -384,6 +402,8 @@ public class VirtualServer {
 			p = pb.start();
 			processMap.put("destroy", p);
 			
+			updateTask.destroyCalled();
+			updateTimer.cancel();
 			state = ServerState.NON_EXISTENT;
 		} catch (IOException e) {
 			throw new Exception("Error with executing destroy_server.sh");
@@ -399,8 +419,8 @@ public class VirtualServer {
 	 * [== if the server is not properly running or destroyed (error) ==]
 	 * + state : "non-existent"
 	 * 
-	 * [== if the server is either running or shutdown ==]
-	 * + state : "running" or "shutdown"
+	 * [== if the server is either running or shutdown or creating ==]
+	 * + state : "running" , "shutdown" or "creating"
 	 * + name : server name
 	 * + id : server id
 	 * + username : "ubuntu"
@@ -425,19 +445,23 @@ public class VirtualServer {
 			serverDetailMap.put("state", "non-existent");
 		}
 		
-		// checks if this server is properly running
-		int serverStatus = getServerStateFromSystem();
 
-		if (serverStatus == -1) {
+		if (isNonExistentConfirmed()) {
 			// server non-existent
 			serverDetailMap.put("state", "non-existent");
 		}else {
-			if (serverStatus == 1) {
+			if (state == ServerState.RUNNING) {
 				// server running
 				serverDetailMap.put("state", "running");
-			}else {
+			}else if (state == ServerState.SHUTDOWN){
 				// server shutdown
 				serverDetailMap.put("state", "shutdown");
+			}else if (state == ServerState.CREATED) {
+				// server might be still creating (or on error)
+				serverDetailMap.put("state", "creating");
+			}else {
+				// weird
+				serverDetailMap.put("state", "error");
 			}
 			serverDetailMap.put("name", serverName);
 			serverDetailMap.put("id", Long.toString(serverID));
@@ -469,15 +493,189 @@ public class VirtualServer {
 		return openPortBuilder.toString();
 	}
 
-	/**
-	 * Checks if the server is properly working, using check_server.sh script
-	 * 
-	 * @return 1 when server running, 0 when shutdown, -1 on non-existent
-	 */
-	private int getServerStateFromSystem() {
-		// TODO Auto-generated method stub
-		return -1;
+	
+	public boolean isRunning() {
+		if (state == ServerState.RUNNING) {
+			return true;
+		} else {
+			return false;
+		}
 	}
+	
+	public boolean isShutDown() {
+		if (state == ServerState.SHUTDOWN) {
+			return true;
+		}else {
+			return false;
+		}
+	}
+	
+	/**
+	 * @return true if server is NON-existent for sure
+	 */
+	public boolean isNonExistentConfirmed() {
+		if (state == ServerState.RUNNING || state == ServerState.SHUTDOWN || state == ServerState.CREATED) {
+			return false;
+		}else {
+			return true;
+		}
+	}
+	
+	/**
+	 * Callback function for when the server was in fact non-existent
+	 */
+	private void foundNonExistent() {
+		state = ServerState.NON_EXISTENT;
+		updateTask.destroyCalled();
+		updateTimer.cancel();
+	}
+	
+	/**
+	 * Callback function for when the server was properly running
+	 */
+	private void foundRunning() {
+		if (state == ServerState.RUNNING || state == ServerState.CREATED || state == ServerState.SHUTDOWN) {
+			state = ServerState.RUNNING;
+		}
+	}
+
+	/**
+	 * Callback function for when the server was properly shutdown (existent)
+	 */
+	private void foundShutDown() {
+		if (state == ServerState.RUNNING || state == ServerState.CREATED || state == ServerState.SHUTDOWN) {
+			state = ServerState.SHUTDOWN;
+		}
+	}
+	
+	
+	/**
+	 * Helper class for VirtualServer that updates the state by
+	 * checking the KVM state with the host system, using check_server.sh script
+	 * 
+	 * Note that this task is blocking, since it waits for the result of the script
+	 * 
+	 * When state == CREATED, this state doesn't change to NON-EXISTENT for first 60 seconds
+	 * after this task was first run by timer, even if an associated KVM isn't found
+	 * 
+	 * The output of check_server.sh when RUNNING is expected as following:
+     *    Id    Name                           State
+     *   ----------------------------------------------------
+     *    8     {instanceId}                  running
+     * 
+     * The output of check_server.sh when SHUTDOWN is expected as following:
+     *    Id    Name                           State
+     *   ----------------------------------------------------
+     *    -     {instanceId}                  shut off
+	 * 
+	 * @author TAISHI
+	 *
+	 */
+	//TODO check if 60 seconds is appropriate
+	class UpdateStateTask extends TimerTask {
+		boolean isDestroyed;
+		ProcessBuilder pb;
+		private final Matcher stateRegex;
+		private int numberCalls;
+		private Date thresholdDate;
+		
+		public UpdateStateTask() {
+			numberCalls = 0;
+			isDestroyed = false;
+			String locCheckScript = scriptDirectory + "/check_server.sh";
+			pb = new ProcessBuilder("/bin/bash", locCheckScript);
+			
+			stateRegex = Pattern.compile("\\s*[^\\s]+\\s+" + instanceId + "\\s+(running|shut off).*").matcher("");
+		}
+
+		@Override
+		public void run() {
+			numberCalls++;
+			if (numberCalls == 1) {
+				thresholdDate = new Date(System.currentTimeMillis() + 60000);
+			}
+			
+			if (isDestroyed) {
+				foundNonExistent();
+				return;
+			}
+			
+			try {
+				Process p = pb.start();
+				
+				// blocking operation
+				BufferedReader buffer = new BufferedReader(new InputStreamReader(p.getInputStream()));
+				String line;
+				
+				while ((line = buffer.readLine()) != null) {
+					if (stateRegex.reset(line).find()) {
+						// found the network name
+						String status = stateRegex.group(1).trim();
+
+						if (status.equals("active")) {
+							// it was active!
+							if (!isDestroyed) {
+								foundRunning();
+							}else {
+								foundNonExistent();
+							}
+							return;
+						}else if (status.equals("shut off")) {
+							// it was shutdown!
+							if (!isDestroyed) {
+								foundShutDown();
+							}else {
+								foundNonExistent();
+							}
+							return;
+						}else {
+							// error (exists but not running nor shutdown)
+							if (shouldWaitNextToUpdate()) {
+								return;
+							}else {
+								foundNonExistent();
+								return;
+							}
+						}
+					}
+				}
+				
+				// not found such server
+				if (shouldWaitNextToUpdate()) {
+					return;
+				}else {
+					foundNonExistent();
+					return;
+				}
+			} catch (Exception e) {
+				Debug.redDebug("Error executing check_server.sh");
+			}
+			
+		}
+
+		/**
+		 * Checks if server is possibly still creating.
+		 * It waits for 60 seconds after create_server.sh was first called
+		 * @return
+		 */
+		private boolean shouldWaitNextToUpdate() {
+			if (state != ServerState.CREATED) {
+				return false;
+			}
+			Date now = new Date(System.currentTimeMillis());
+			if (now.before(thresholdDate)) {
+				return true;
+			}else {
+				return false;
+			}
+		}
+
+		public void destroyCalled() {
+			isDestroyed = true;
+		}
+		
+	}
+	
 	
 
 }
