@@ -373,10 +373,14 @@ public class SubnetAddress {
 	 * @return 1 on success, 0 on error
 	 */
 	private int destroyBridgeOnHost() {
-		if (state == BridgeState.NON_EXISTENT) {
-			Debug.debug("destroyBridgeOnHost() called when subnet doesn't exist");
-			return 0;
-		}
+		//should still run, it's safer and more resource-friendly to run even when it's non-existent
+		//if (state == BridgeState.NON_EXISTENT) {
+		//	Debug.debug("destroyBridgeOnHost() called when subnet doesn't exist");
+		//	return 0;
+		//}
+		updateTask.destroyCalled();
+		updateTimer.cancel();
+
 		String locDestroyScript = scriptDirectory + "/destroy_subnet.sh";
 		
 		ProcessBuilder pb = new ProcessBuilder(locDestroyScript, Long.toString(subnetID));
@@ -387,8 +391,6 @@ public class SubnetAddress {
 			p = pb.start();
 			processMap.put("destroy", p);
 			
-			updateTask.destroyCalled();
-			updateTimer.cancel();
 			state = BridgeState.NON_EXISTENT;
 			return 1;
 		} catch (Exception e) {
@@ -452,8 +454,6 @@ public class SubnetAddress {
 	 */
 	private void foundNonExistent() {
 		state = BridgeState.NON_EXISTENT;
-		updateTask.destroyCalled();
-		updateTimer.cancel();
 	}
 	
 	/**

@@ -1,0 +1,90 @@
+package object;
+
+import java.util.HashMap;
+
+import lib.SubnetAddress;
+import project.Controller;
+
+public class Network {
+	enum NetworkState {
+		UP,
+		DOWN
+	}
+
+	// Tenant ID to which this network belong
+	public final long tenantID;
+	public final long networkID;
+
+	private NetworkState state;
+	public String networkName;
+	
+	private Controller controller;
+	
+	// maps subnetID to Subnet instance
+	private HashMap<Long, Subnet> subnetMap;
+
+
+	/**
+	 * !!
+	 * @param networkID 
+	 */
+	public Network(Controller controller, String networkName, long tenantID, long networkID) {
+		this.controller = controller;
+		this.tenantID = tenantID;
+		this.networkID = networkID;
+		this.networkName = networkName;
+		this.state = NetworkState.UP;
+		this.subnetMap = new HashMap<Long, Subnet>();
+	}
+
+
+	//Deactivates this network
+	public void deactivate(){
+		this.state = NetworkState.DOWN;
+	}
+	
+	/**
+	 * Registers a new subnet to this network.
+	 * It automatically finds an available range of IP address, which will be
+	 * assigned to this subnet
+	 * @return subnet ID that was registered
+	 */
+	public long registerNewSubnet(String domainName) {
+		long subnetID;
+		
+		// randomly generate subnet ID until it finds a new one
+		do {
+			subnetID = controller.randomGen.nextLong();
+		} while (subnetMap.containsKey(subnetID));
+		
+		// get currently available subnet address space
+		SubnetAddress subnetAddr = controller.getAvailableSubnetAddr(subnetID);
+		if (subnetAddr == null) {
+			//TODO error handling
+			
+		}
+		
+		Subnet subnet = new Subnet(controller, this, subnetID, subnetAddr, domainName);
+		
+		subnetMap.put(subnetID, subnet);
+		
+		return subnetID;
+	}
+	
+	/**
+	 * Get the associated Subnet instance from subnetID
+	 * @return Associated Subnet instance on success; otherwise null
+	 */
+	public Subnet getSubnetFromID(long subnetID) {
+		Subnet subnet = subnetMap.get(subnetID);
+		if (subnet == null) {
+			return null;
+		}
+
+		return subnet;
+	}
+	
+	public boolean isNetworkUp() {
+		return state == NetworkState.UP ? true : false;
+	}
+}

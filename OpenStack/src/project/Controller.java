@@ -3,6 +3,7 @@ package project;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Random;
 
@@ -125,7 +126,14 @@ public class Controller {
 		return null;
 	}
 	
-	
+	public Collection<Network> getNetworkList(long tenantID) throws Exception{
+		HashMap<Long, Network> networkMap = tenantMap.get(tenantID);
+		if (networkMap == null) {
+			throw new Exception("getNetworkList(): No such tenant");
+		}
+
+		return networkMap.values();
+	}
 
 	/**
 	 * Assigns a new bridge name for subnet
@@ -198,6 +206,21 @@ public class Controller {
 
 		tenantMap.put(tenantID, networkMap);
 		return tenantID;
+	}
+	
+	/**
+	 * Deletes all resources associated with a specified tenant
+	 * @throws Exception - when couldn't find such tenant
+	 */
+	public void deregisterTenant(long tenantID) throws Exception{
+		HashMap<Long, Network> networkMap = tenantMap.remove(tenantID);
+		if (networkMap == null) {
+			throw new Exception("deregisterTenant(): didn't find such tenant");
+		}
+		Collection<Network> networks = networkMap.values();
+		for (Network network : networks) {
+			network.destroy();
+		}
 	}
 
 	/**

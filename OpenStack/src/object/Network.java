@@ -1,5 +1,6 @@
 package object;
 
+import java.util.Collection;
 import java.util.HashMap;
 
 import lib.SubnetAddress;
@@ -72,6 +73,13 @@ public class Network {
 	}
 	
 	/**
+	 * Deregisters a subnet from this network
+	 */
+	public void deregisterSubnet(long subnetID) {
+		subnetMap.remove(subnetID);
+	}
+	
+	/**
 	 * Get the associated Subnet instance from subnetID
 	 * @return Associated Subnet instance on success; otherwise null
 	 */
@@ -82,5 +90,27 @@ public class Network {
 		}
 
 		return subnet;
+	}
+	
+	public boolean isNetworkUp() {
+		return state == NetworkState.UP ? true : false;
+	}
+	
+	public Collection<Subnet> getSubnetList() {
+		return subnetMap.values();
+	}
+	
+	/**
+	 * Destroys all resources associated with this network
+	 * Should only be called from {@code deregisterTenant()} in Controller
+	 */
+	public void destroy() {
+		//destroy all subnets
+		Collection<Subnet> subnets = subnetMap.values();
+		for (Subnet subnet : subnets) {
+			subnet.destroy();
+			subnetMap.remove(subnet.subnetID);
+		}
+		deactivate();
 	}
 }

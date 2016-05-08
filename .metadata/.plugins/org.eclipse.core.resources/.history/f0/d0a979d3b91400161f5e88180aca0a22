@@ -1,0 +1,177 @@
+package object;
+
+import java.net.Inet4Address;
+import java.util.Collection;
+import java.util.HashMap;
+
+import lib.LinkLayerHandler;
+import lib.MACAddress;
+import lib.SubnetAddress;
+import lib.VirtualNIC;
+import project.Controller;
+
+public class Subnet {
+	public final long subnetID;
+	
+	// network to which this subnet belongs
+	private Network parentNetwork;	
+	
+	// controller
+	private Controller controller;
+	
+	// maps serverID to VirtualServer instance
+	private HashMap<Long, VirtualServer> serverMap;
+	
+	// maintains the range of subnet address and gateway address
+	public SubnetAddress subnetAddress;
+	
+	// this manages LinkLayer stuff
+	//private LinkLayerHandler linkHandler;
+	
+	// domain name for this subnet (e.g. network.tenantName ?)
+	public String domainName;
+	
+	// map of Virtual NIC (= MAC address) in this subnet
+	// maps string representation of MAC address to VNIC
+	private HashMap<MACAddress, VirtualNIC> vnicMap;
+	
+
+	
+
+	/**
+	 * Create Subnet instance. Should be called when createSubnet() API is called
+	 */
+	public Subnet(Controller controller, Network parentNetwork, long subnetID, SubnetAddress subnetAddr, String domainName) {
+		this.controller = controller;
+		this.parentNetwork = parentNetwork;
+		this.subnetID = subnetID;
+		this.serverMap = new HashMap<Long, VirtualServer>();
+		this.subnetAddress = subnetAddr;
+		this.domainName = domainName;
+		
+		this.linkHandler = new LinkLayerHandler();
+		this.vnicMap = new HashMap<>();
+
+	}
+	
+	
+	/**
+	 * Registers a new server to this subnet.
+	 * It automatically finds an available IP address and assigns it (DHCP)
+	 * @param password 
+	 * @return server ID that was registered
+	 * @throws Exception - when IP address not assignable
+	 */
+	//TODO error handling when there is no available IP??
+	public long registerNewServer(String serverName, String password) throws Exception {
+		if (!isRunning()) {
+			throw new Exception("Subnet is not running properly");
+		}
+		long serverID;
+		// randomly generate subnet ID until it finds a new one
+		do {
+			serverID = controller.randomGen.nextLong();
+		} while (serverMap.containsKey(serverID));
+		
+		// registers a new virtual server
+		String networkCfg = getNetworkCfg();
+		//TODO this needs to use more specified contstructor later
+		VirtualServer server = new VirtualServer(controller, this, serverID, serverName, password, networkCfg);
+		serverMap.put(serverID, server);
+
+		// assign an available IP address to the newly created server
+		Inet4Address ipAddr = subnetAddress.assignNewIPAddress();
+		if (ipAddr == null) {
+			//IP address not assignable!!!!!!
+			throw new Exception("IPAddress not assignable to the server: " + serverName);
+		}
+		server.assignDataIPAndCreateVM(ipAddr);
+		
+		return serverID;
+	}
+	
+	/**
+	 * Get network configuration for virt-install
+	 * Cannot contain space in the returned string
+	 * 
+	 * e.g. -- "bridge=virbr0,model=virtio"
+	 * @return
+	 */
+	public String getNetworkCfg() {
+		//return "bridge=br0,model=virtio";
+		
+		String config = "bridge=" + subnetAddress.bridgeName + ",model=virtio"; 
+		return config;
+	}
+	
+	/**
+	 * Assign an new MAC address for a given virtual NIC and registers it internally
+	 */
+	public MACAddress registerNewVNIC(VirtualNIC virtualNIC) {
+		MACAddress macAddr;
+		
+		// randomly generate MAC Address until it finds a new one
+		do {
+			macAddr = MACAddress.getRandomMACAddr();
+		} while (vnicMap.containsKey(macAddr));
+		
+		vnicMap.put(macAddr, virtualNIC);
+		
+		return macAddr;
+	}
+
+
+	public boolean isRunning() {
+		return subnetAddress.isRunning();
+	}
+
+
+	/**
+	 * Get the associated VirtualServer instance from serverID
+	 * @return Associated VirtualServer instance on success; otherwise null
+	 */
+	public VirtualServer getServerFromID(long serverID) {
+		VirtualServer server = serverMap.get(serverID);
+		if (server == null) {
+			return null;
+		}
+		
+		return server;
+	}
+	
+	public Collection<VirtualServer> getRegisteredServerList() {
+		return serverMap.values();
+	}
+	
+	
+	/**
+	 * Deregisters a server from this subnet.
+	 */
+	public void deregisterServer(long serverId) {
+		serverMap.remove(serverId);
+	}
+	
+	public void deregisterVNIC(MACAddress macAddr) {
+		vnicMap.remove(macAddr);
+	}
+
+
+	/**
+	 * Destroys all resources associated with this subnet
+	 */
+	public void destroy() {
+		//destroy all servers associated
+		Collection<VirtualServer> servers = this.getRegisteredServerList();
+		for (VirtualServer server : servers) {
+			server.destroyServer();
+		}
+		
+		//destroy SubnetAddress
+		subnetAddress.destroySubnetAddress();
+		
+		//deregister itself from parentNetwork
+		parentNetwork.deregisterSubnet(subnetID);
+		
+	}
+	
+}

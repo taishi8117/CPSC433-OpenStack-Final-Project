@@ -377,7 +377,9 @@ public class VirtualServer {
 	}
 	
 	/**
-	 * Destroys a virtual machine using destroy_server.sh script
+	 * Destroys a virtual machine using destroy_server.sh script as well as
+	 * all associated resources (dataNIC, open ports)
+	 * It is NOT responsible for deregistering itself from parentSubnet
 	 * 
      * # destroy_server.sh : script to destroy a virtual server
      * 
@@ -387,10 +389,24 @@ public class VirtualServer {
      *  * VSHOST: the instance ID of the server
      *  
 	 */
-	public void destroyVirtualMachine() throws Exception {
-		if (state == ServerState.NON_EXISTENT) {
-			throw new Exception("Server doesn't exist");
-		}
+	public void destroyServer() {
+		// should be able to run even if it's non-existent
+		// also it's safer and more resource-friendly 
+
+		//if (state == ServerState.NON_EXISTENT) {
+		//	throw new Exception("Server doesn't exist");
+		//}
+
+		//stop timer
+		updateTask.destroyCalled();
+		updateTimer.cancel();
+		
+		//TODO !!! deregister all open ports in portMap
+
+		// deregister dataNIC
+		dataNIC.destroy();
+		// deregister from the parent subnet
+		parentSubnet.deregisterServer(serverID);
 		
 		String locDestroyScript = scriptDirectory + "/destroy_server.sh";
 		
@@ -402,18 +418,15 @@ public class VirtualServer {
 			p = pb.start();
 			processMap.put("destroy", p);
 			
-			updateTask.destroyCalled();
-			updateTimer.cancel();
 			state = ServerState.NON_EXISTENT;
 		} catch (IOException e) {
-			throw new Exception("Error with executing destroy_server.sh");
+			Debug.redDebug("Error with executing destroy_server.sh");
 		}
 	}
 	
 	/**
 	 * Get the server detail. Needs to be run before a user can attempt to
-	 * access to this server directly. This confirms with the system if
-	 * the server is running, shutdown, or on error, and changes the state accordingly.
+	 * access to this server directly. 
 	 * 
 	 * Returns HashMap object about the server, with following keys
 	 * [== if the server is not properly running or destroyed (error) ==]
@@ -495,19 +508,15 @@ public class VirtualServer {
 
 	
 	public boolean isRunning() {
-		if (state == ServerState.RUNNING) {
-			return true;
-		} else {
-			return false;
-		}
+		return state == ServerState.RUNNING ? true : false;
 	}
 	
 	public boolean isShutDown() {
-		if (state == ServerState.SHUTDOWN) {
-			return true;
-		}else {
-			return false;
-		}
+		return state == ServerState.SHUTDOWN ? true : false;
+	}
+	
+	public boolean isCreating() {
+		return state == ServerState.CREATED ? true : false;
 	}
 	
 	/**
@@ -526,8 +535,6 @@ public class VirtualServer {
 	 */
 	private void foundNonExistent() {
 		state = ServerState.NON_EXISTENT;
-		updateTask.destroyCalled();
-		updateTimer.cancel();
 	}
 	
 	/**

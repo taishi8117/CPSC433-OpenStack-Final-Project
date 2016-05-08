@@ -1,9 +1,9 @@
 package object;
 
 import java.net.Inet4Address;
+import java.util.Collection;
 import java.util.HashMap;
 
-import lib.LinkLayerHandler;
 import lib.MACAddress;
 import lib.SubnetAddress;
 import lib.VirtualNIC;
@@ -25,7 +25,7 @@ public class Subnet {
 	public SubnetAddress subnetAddress;
 	
 	// this manages LinkLayer stuff
-	private LinkLayerHandler linkHandler;
+	//private LinkLayerHandler linkHandler;
 	
 	// domain name for this subnet (e.g. network.tenantName ?)
 	public String domainName;
@@ -48,7 +48,7 @@ public class Subnet {
 		this.subnetAddress = subnetAddr;
 		this.domainName = domainName;
 		
-		this.linkHandler = new LinkLayerHandler();
+		//this.linkHandler = new LinkLayerHandler();
 		this.vnicMap = new HashMap<>();
 
 	}
@@ -68,6 +68,7 @@ public class Subnet {
 		}
 		long serverID;
 		// randomly generate subnet ID until it finds a new one
+		//TODO actually, serverID needs to be unique in the entire host system
 		do {
 			serverID = controller.randomGen.nextLong();
 		} while (serverMap.containsKey(serverID));
@@ -120,8 +121,81 @@ public class Subnet {
 	}
 
 
-	private boolean isRunning() {
+	public boolean isRunning() {
 		return subnetAddress.isRunning();
+	}
+
+
+	/**
+	 * Get the associated VirtualServer instance from serverID
+	 * @return Associated VirtualServer instance on success; otherwise null
+	 */
+	public VirtualServer getServerFromID(long serverID) {
+		VirtualServer server = serverMap.get(serverID);
+		if (server == null) {
+			return null;
+		}
+		
+		return server;
+	}
+	
+	public Collection<VirtualServer> getRegisteredServerList() {
+		return serverMap.values();
+	}
+	
+	/**
+	 * Returns the subnet detail as Hashmap
+	 * For further detail, refer to {@code getSubnetAddressDetail()} in SubnetAddress
+	 * 
+	 * + "id" : subnet ID
+	 * + "domain" : domain name
+	 * + "numserv" : number of servers currently registered (might be not working well)
+	 * + "numvnic" : number of vnics currently registered (might be not working well)
+	 * 
+	 * In addition, there are all keys from {@code getSubnetAddressDetail()} based on its state
+	 * 
+	 * @return
+	 */
+	public HashMap<String, String> getDetail() {
+		HashMap<String, String> detailMap = subnetAddress.getSubnetAddressDetail();
+		detailMap.put("id", Long.toString(subnetID));
+		detailMap.put("domain", domainName);
+		detailMap.put("numserv", Integer.toString(serverMap.size()));
+		detailMap.put("numvnic", Integer.toString(vnicMap.size()));
+		
+		return detailMap;
+	}
+	
+	
+	/**
+	 * Deregisters a server from this subnet.
+	 */
+	public void deregisterServer(long serverId) {
+		serverMap.remove(serverId);
+	}
+	
+	public void deregisterVNIC(MACAddress macAddr) {
+		vnicMap.remove(macAddr);
+	}
+
+
+	/**
+	 * Destroys all resources associated with this subnet
+	 */
+	public void destroy() {
+		//destroy all servers associated
+		Collection<VirtualServer> servers = this.getRegisteredServerList();
+		for (VirtualServer server : servers) {
+			server.destroyServer();
+			serverMap.remove(server.serverID);
+		}
+		
+		//destroy SubnetAddress
+		subnetAddress.destroySubnetAddress();
+		
+		//deregister itself from parentNetwork
+		parentNetwork.deregisterSubnet(subnetID);
+		
 	}
 	
 }

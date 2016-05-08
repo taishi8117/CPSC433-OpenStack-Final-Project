@@ -11,6 +11,7 @@ import object.Subnet;
  *
  */
 public class VirtualNIC {
+	private Subnet parentSubnet;
 	
 	// IP address
 	public Inet4Address ipAddr;
@@ -29,6 +30,7 @@ public class VirtualNIC {
 	 * @param subnetAddr
 	 */
 	public VirtualNIC(Subnet parentSubnet, String interfaceName) {
+		this.parentSubnet = parentSubnet;
 		this.subnetAddr = parentSubnet.subnetAddress;
 		this.macAddress = parentSubnet.registerNewVNIC(this);
 		this.interfaceName = interfaceName;
@@ -58,6 +60,15 @@ public class VirtualNIC {
 		}else {
 			return true;
 		}
+	}
+
+
+	/**
+	 * Deregisters this virtual NIC (IP address and MAC Address)
+	 */
+	public void destroy() {
+		subnetAddr.deregisterIPAddress(ipAddr);
+		parentSubnet.deregisterVNIC(macAddress);
 	}
 
 }

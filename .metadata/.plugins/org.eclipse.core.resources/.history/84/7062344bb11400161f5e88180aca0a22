@@ -1,0 +1,207 @@
+package project;
+
+import object.Network;
+import object.Subnet;
+import object.VirtualServer;
+import java.net.HttpURLConnection;
+import java.util.HashMap;
+
+import javax.sound.sampled.Port;
+
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+
+public class APIHandler {
+	private Controller controller;
+
+	/**
+	 * Creates a new tenant and network. Should be called when the corresponding API is called
+	 * @return long - tenantID
+	 */
+	public long createNewTenantAndNetwork(String networkName) throws Exception {
+		long tenantID = controller.registerNewTenant();
+
+		if (controller.registerNewNetwork(tenantID, networkName) == null) {
+			//error registering!!!!!
+			throw new Exception();
+		}
+		return tenantID;
+	}
+
+	/**
+	 * Delete a specified tenant and its associated resources
+	 */
+	public long deleteTenant(long tenantID) {
+		return 0;
+
+	}
+
+
+	/**
+	 * Creates a new subnet for a specified tenantID and networkID.
+	 * Should be called when the corresponding API is called
+	 *
+	 * @return long - subnet ID that was created and registered
+	 * @throws Exception - when there is no associated network from given IDs
+	 */
+	public long createNewSubnet(long tenantID, long networkID, String domainName) throws Exception {
+		Network network = controller.getNetworkFromID(tenantID, networkID);
+		if (network == null || !network.isNetworkUp()) {
+			//error finding network!!!!
+			throw new Exception("createNewSubnet(): error finding a running network");
+		}
+		long subnetID = network.registerNewSubnet(domainName);
+
+		return subnetID;
+	}
+
+	/**
+	 * Creates a new port for a specified network.
+	 * Should be called when the corresponding API is called
+	 * @param number - port number desired (optional)
+	 *
+	 * @return int - port number that was created and registered,
+	 * 		   -1 - if the port is already registered
+	 * @throws Exception - when there is no associated network from given IDs
+	 */
+	public int createNewPort(long tenantID, long networkID, int number) throws  Exception{
+		Network network = controller.getNetworkFromID(tenantID, networkID);
+		if (network == null) {
+			//error finding network!!!!
+			throw new Exception();
+		}
+		int portNum = controller.registerNewPort(number);
+
+		return portNum;
+	}
+
+	// Create port with unspecified port number. (creates random number)
+	public int createNewPort(long tenantID, long networkID) throws Exception{
+		Network network = controller.getNetworkFromID(tenantID, networkID);
+		if (network == null) {
+			//error finding network!!!!
+			throw new Exception();
+		}
+		int portNum = controller.registerNewPort(0);
+		return portNum;
+	}
+
+	// Gets a list of occupied ports
+	public String listPort() {
+		String occupiedPorts= "Occupied Ports:";
+		for ( Integer port : controller.portMap.keySet() ) {
+			occupiedPorts+= port;
+			occupiedPorts+= " ";
+		}
+		return occupiedPorts;
+	}
+
+	public String getPortDetails(int portNum) {
+		Port details =(Port) controller.portMap.get(portNum);
+		if (details == null){
+			return "";
+		}
+		return details.toString();
+	}
+
+	public int updatePort(int portNum) {
+		// TODO: figure out update parameters
+		controller.portMap.get(portNum).update();
+		return portNum;
+	}
+
+	public int deletePort(int portNum){
+		controller.portMap.remove(portNum);
+		return portNum;
+	}
+
+
+	/**
+	 * Creates a new server for specified IDs
+	 * Should be called when the corresponding API is called
+	 * @return long - server ID that was created and registered
+	 * @throws Exception - when there is an errorrrrr
+	 */
+	public long createNewServer(long tenantID, long networkID, long subnetID, String serverName, String password) throws Exception {
+		Network network = controller.getNetworkFromID(tenantID, networkID);
+		if (network == null || !network.isNetworkUp()) {
+			//error finding network!!!!
+			throw new Exception("createNewServer(): error finding a running network");
+		}
+
+		Subnet subnet = network.getSubnetFromID(subnetID);
+		if (subnet == null || !subnet.isRunning()) {
+			//error finding subnet!!!!
+			throw new Exception("createNewServer(): error finding a running subnet");
+		}
+
+		long serverID = subnet.registerNewServer(serverName, password);
+		return serverID;
+	}
+
+
+	/**
+	 * List of virtual servers registered to given IDs.
+	 * Format is following:
+	 *   Return: {"${instance-Id}":"${state}", ...}
+	 * 
+	 */
+	public JSONObject listServers(long tenantID, long networkID, long subnetID) {
+		return null;
+	}
+
+	/**
+	 * Returns the server details in JSON Object.
+	 * For further detail, refer to {@code getServerDetail()} in {@code VirtualServer} class
+	 */
+	public JSONObject getServerDetails(long tenantID, long networkID, long subnetID, long serverID) throws Exception {
+		VirtualServer server = getServerInstanceFromId(tenantID, networkID, subnetID, serverID);
+		HashMap<String, String> detailMap = server.getServerDetail();
+		if (detailMap == null) {
+			//shouldn't happen
+			throw new Exception("getServerDetails(): returned detail map was null");
+		}
+		
+		JSONObject obj = new JSONObject(detailMap);
+		return obj;
+	}
+	
+	/**
+	 * Get VirtualServer instance that is associated with given IDs
+	 * It DOES NOT check if associated KVM is properly running on host machine
+	 * @throws Exception - couldn't find one properly
+	 */
+	public VirtualServer getServerInstanceFromId(long tenantID, long networkID, long subnetID, long serverID) throws Exception {
+		Network network = controller.getNetworkFromID(tenantID, networkID);
+		if (network == null || !network.isNetworkUp()) {
+			throw new Exception("getServerInstanceFromId(): error finding a running network");
+		}
+		
+		Subnet subnet = network.getSubnetFromID(subnetID);
+		if (subnet == null || !subnet.isRunning()) {
+			throw new Exception("getServerInstanceFromId(): error finding a running subnet");
+		}
+		
+		VirtualServer server = subnet.getServerFromID(serverID);
+		// no need to check if server is properly running
+		if (server == null) {
+			throw new Exception("getServerInstanceFromId(): error finding a properly running server");
+		}
+		
+		return server;
+	}
+
+	@Deprecated
+	public int startServer() {
+		return 1;
+	}
+
+	@Deprecated
+	public int stopServer() {
+		return 1;
+	}
+
+
+
+
+}
