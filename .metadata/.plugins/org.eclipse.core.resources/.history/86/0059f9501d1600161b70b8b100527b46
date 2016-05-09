@@ -1,0 +1,19 @@
+package project;
+
+import com.sun.net.httpserver.HttpServer;
+
+/**
+ * A simple HTTP server for supporting external API access.
+ * 
+ * @author TAISHI
+ */
+public class SimpleHTTPServer {
+	private Controller controller;
+	private APIHandler apiHandler;
+	private HttpServer server;
+
+	public SimpleHTTPServer(Controller controller, APIHandler apiHandler) {
+
+	}
+
+}

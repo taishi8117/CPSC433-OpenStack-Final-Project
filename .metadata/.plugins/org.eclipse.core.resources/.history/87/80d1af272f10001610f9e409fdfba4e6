@@ -1,9 +1,0 @@
-package object;
-
-
-public class DNSServer {
-	public DNSServer() {
-		// TODO Auto-generated constructor stub
-	}
-
-}

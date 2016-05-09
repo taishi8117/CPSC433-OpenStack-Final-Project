@@ -4,30 +4,33 @@ import object.Network;
 import object.Port;
 import object.Subnet;
 import object.VirtualServer;
-import java.net.HttpURLConnection;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 
-
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
-
 public class APIHandler {
 	private Controller controller;
+	
+	public APIHandler(Controller controller) {
+		this.controller = controller;
+	}
 
 	/**
 	 * Creates a new tenant and network. Should be called when the corresponding API is called
-	 * @return long - tenantID
+	 * @return Map : {"tenantId" : <tenant id created> , "networkId" : <tenant id created> }
 	 */
-	public long createNewTenantAndNetwork(String networkName) throws Exception {
+	public HashMap<String, String> createNewTenantAndNetwork(String networkName) throws Exception {
+		HashMap<String, String> detail = new HashMap<>();
 		long tenantID = controller.registerNewTenant();
+		detail.put("tenantId", Long.toString(tenantID));
 
-		if (controller.registerNewNetwork(tenantID, networkName) == null) {
+		Network network;
+		if ((network = controller.registerNewNetwork(tenantID, networkName)) == null) {
 			//error registering!!!!!
 			throw new Exception();
 		}
-		return tenantID;
+		detail.put("networkId", Long.toString(network.networkID));
+		return detail;
 	}
 
 	/**
@@ -41,13 +44,13 @@ public class APIHandler {
 	/**
 	 * Gives Information about a specified tenant
 	 * It includes:
-	 *  + network : network ID for this tenant (just one, since we're implementing just one)
-	 *  + subnet : subnet ID for this tenant (just one too)
+	 *  + networkId : network ID for this tenant (just one, since we're implementing just one)
+	 *  + subnetId : subnet ID for this tenant (just one too)
 	 *  
 	 *  Note that one can use {@code getSubnetDetails()} to find out more about the subnet
 	 * @throws Exception
 	 */
-	public JSONObject getTenantInfo(long tenantID) throws Exception {
+	public HashMap<String,String> getTenantInfo(long tenantID) throws Exception {
 		Collection<Network> networks = controller.getNetworkList(tenantID);
 		HashMap<String, String> infoMap = new HashMap<>();
 		
@@ -55,15 +58,14 @@ public class APIHandler {
 		if (network == null) {
 			throw new Exception("getTenantInfo(): No network found");
 		}
-		infoMap.put("network", Long.toString(network.networkID));
+		infoMap.put("networkId", Long.toString(network.networkID));
 		
 		Subnet subnet = network.getSubnetList().iterator().next();
-		if (subnet == null) {
-			throw new Exception("getSubnetInfo(): No subnet found");
+		if (subnet != null) {
+			infoMap.put("subnetId", Long.toString(subnet.subnetID));
 		}
-		infoMap.put("subnet", Long.toString(subnet.subnetID));
 		
-		return new JSONObject(infoMap);
+		return infoMap;
 	}
 
 
@@ -112,7 +114,7 @@ public class APIHandler {
 	 * For further detail, refer to {@code getDetail()} in Subnet
 	 * @throws Exception - when can't find the subnet
 	 */
-	public JSONObject getSubnetDetails(long tenantID, long networkID, long subnetID) throws Exception {
+	public HashMap<String, String> getSubnetDetails(long tenantID, long networkID, long subnetID) throws Exception {
 		Network network = controller.getNetworkFromID(tenantID, networkID);
 		if (network == null || !network.isNetworkUp()) {
 			//error finding network!!!!
@@ -126,7 +128,7 @@ public class APIHandler {
 		}
 		
 		
-		return new JSONObject(subnet.getDetail());
+		return subnet.getDetail();
 	}
 
 	/**
@@ -249,7 +251,7 @@ public class APIHandler {
 	 * @throws Exception 
 	 * 
 	 */
-	public JSONObject listServers(long tenantID, long networkID, long subnetID) throws Exception {
+	public HashMap<String, String> listServers(long tenantID, long networkID, long subnetID) throws Exception {
 		Network network = controller.getNetworkFromID(tenantID, networkID);
 		if (network == null || !network.isNetworkUp()) {
 			//error finding network!!!!
@@ -289,14 +291,14 @@ public class APIHandler {
 			}
 			
 		}
-		return new JSONObject(list);
+		return list;
 	}
 
 	/**
 	 * Returns the server details in JSON Object.
 	 * For further detail, refer to {@code getServerDetail()} in {@code VirtualServer} class
 	 */
-	public JSONObject getServerDetails(long tenantID, long networkID, long subnetID, long serverID) throws Exception {
+	public HashMap<String,String> getServerDetails(long tenantID, long networkID, long subnetID, long serverID) throws Exception {
 		VirtualServer server = getServerInstanceFromId(tenantID, networkID, subnetID, serverID);
 		HashMap<String, String> detailMap = server.getServerDetail();
 		if (detailMap == null) {
@@ -304,7 +306,7 @@ public class APIHandler {
 			throw new Exception("getServerDetails(): returned detail map was null");
 		}
 		
-		return new JSONObject(detailMap);
+		return detailMap;
 	}
 	
 	/**

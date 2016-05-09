@@ -434,7 +434,7 @@ public class VirtualServer {
 	 * [== if the server is either running or shutdown or creating ==]
 	 * + state : "running" , "shutdown" or "creating"
 	 * + name : server name
-	 * + id : server id
+	 * + serverId : server id
 	 * + username : "ubuntu"
 	 * + password : plaintext of the password for username "ubuntu"
 	 * + domain : domain name
@@ -476,7 +476,7 @@ public class VirtualServer {
 				serverDetailMap.put("state", "error");
 			}
 			serverDetailMap.put("name", serverName);
-			serverDetailMap.put("id", Long.toString(serverID));
+			serverDetailMap.put("serverId", Long.toString(serverID));
 			serverDetailMap.put("username", USERNAME);
 			serverDetailMap.put("password", password);
 			serverDetailMap.put("domain", parentSubnet.domainName);

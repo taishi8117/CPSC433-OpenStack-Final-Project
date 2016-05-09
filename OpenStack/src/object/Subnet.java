@@ -147,7 +147,7 @@ public class Subnet {
 	 * Returns the subnet detail as Hashmap
 	 * For further detail, refer to {@code getSubnetAddressDetail()} in SubnetAddress
 	 * 
-	 * + "id" : subnet ID
+	 * + "subnetId" : subnet ID
 	 * + "domain" : domain name
 	 * + "numserv" : number of servers currently registered (might be not working well)
 	 * + "numvnic" : number of vnics currently registered (might be not working well)
@@ -158,7 +158,7 @@ public class Subnet {
 	 */
 	public HashMap<String, String> getDetail() {
 		HashMap<String, String> detailMap = subnetAddress.getSubnetAddressDetail();
-		detailMap.put("id", Long.toString(subnetID));
+		detailMap.put("subnetId", Long.toString(subnetID));
 		detailMap.put("domain", domainName);
 		detailMap.put("numserv", Integer.toString(serverMap.size()));
 		detailMap.put("numvnic", Integer.toString(vnicMap.size()));

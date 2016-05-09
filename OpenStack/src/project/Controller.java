@@ -9,7 +9,6 @@ import java.util.Random;
 
 import lib.Debug;
 import lib.SubnetAddress;
-import object.DNS;
 import object.Network;
 import object.Port;
 
@@ -22,6 +21,8 @@ import object.Port;
  * @author TAISHI
  *
  */
+
+//TODO make sure randomly generated Id is positive by taking a mod
 public class Controller {
 	// global OpenStack configuration
 	public HashMap<String, String> configMap;
@@ -29,7 +30,7 @@ public class Controller {
 
 	// maps tenantID to Hash Map of Network (mapping network ID to Network)
 	private HashMap<Long, HashMap<Long,Network>> tenantMap;
-	private DNS dnsServer;
+	//private DNS dnsServer;
 
 	// maps portNums to Port instance
 	public HashMap<Integer, Port> portMap;
@@ -49,7 +50,7 @@ public class Controller {
 	public Controller(HashMap<String,String> configMap) throws Exception {
 		this.tenantMap = new HashMap<Long, HashMap<Long,Network>>();
 		this.randomGen = new Random();
-		this.dnsServer = new DNS();
+		//this.dnsServer = new DNS();
 		this.configMap = configMap;
 
 		//port map init

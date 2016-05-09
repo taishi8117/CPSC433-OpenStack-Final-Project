@@ -1,0 +1,31 @@
+package project;
+
+import com.sun.net.httpserver.HttpServer;
+
+/**
+ * A simple HTTP server for supporting external API access.
+ * 
+ * @author TAISHI
+ */
+public class SimpleHTTPServer {
+	private Controller controller;
+	private APIHandler apiHandler;
+	private HttpServer server;
+
+	/**
+	 * Binds to the port specified in {@code controller.configMap}
+	 */
+	public SimpleHTTPServer(Controller controller, APIHandler apiHandler) {
+		int ctrlPort = controller.configMap.get("CtrlPort");
+		
+
+	}
+
+	/**
+	 * Starts the HTTP server
+	 */
+	public void start() {
+		server.start();
+	}
+
+}

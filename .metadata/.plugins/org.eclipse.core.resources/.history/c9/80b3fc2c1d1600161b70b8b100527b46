@@ -1,0 +1,16 @@
+package project;
+
+/**
+ * A simple HTTP server for supporting external API access.
+ * 
+ * @author TAISHI
+ */
+public class SimpleHTTPServer {
+	private Controller controller;
+	private APIHandler apiHandler;
+
+	public SimpleHTTPServer(Controller controller, APIHandler apiHandler) {
+
+	}
+
+}

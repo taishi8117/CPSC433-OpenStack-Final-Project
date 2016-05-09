@@ -1,0 +1,87 @@
+package project;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
+/**
+ * A simple HTTP server for supporting external API access.
+ * Currently supporting API contexts are following:
+ * Note that all message body needs to be JSON form
+ * 
+ * + (POST) /createTenant
+ * 		- POST body: {"network" : <network name>}
+ * 		- response body : {"method" : "createTenant", "network" : <network name> , "networkId" : <network id created> , "tenantID" : <tenant id created> } on success
+ * 						  {"method" : "createTenant", "network" : <network name> , "error" : "true" } on error
+ * 
+ * + (POST) /deleteTenant
+ * 		- POST body: {"tenantId" : <tenant id to delete>}
+ * 		- response body : {"method" : "deleteTenant", "tenantId" : <tenant id to delete> , "success" : ("true"|"false") }
+ * 
+ * + (POST) /getTenantDetail
+ * 		- POST body: {"tenantId" : <tenant id for which to retrieve the detail> }
+ * 		- response body : {"method" : "getTenantDetail" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : (null|<subnet id>) }
+ * 
+ * + (POST) /createSubnet
+ * 		- POST body: {"tenantId" : <tenant id> , "networkId" : <network id> , "domain" : <domain name to create for the subnet> }
+ * 		- response body : {"method" : "createSubnet" , "tenantId" : <tenant id> , "networkId" : <network id>, "subnetId" : <subnet id> , "domain" : <domain name> } on success
+ * 						  {"method" : "createSubnet" , "tenantId" : <tenant id> , "networkId" : <network id>, "error" : "true" } on error
+ * 
+ * + (POST) /destroySubnet
+ * 		- POST body : {"tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> }
+ * 		- response body : {"method" : "destroySubnet" , "tenantId" : <tenant id> , "networkId" : <network id>" , "subnetId" : <subnet id> , "success" : ("true"|"false") }
+ * 
+ * + (POST) /getSubnetDetail
+ * 		- POST body: {"tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> }
+ * 		- response body : {"method" : "getSubnetDetail" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , ..... } on success
+ * 
+ * 
+ * 
+ * @author TAISHI
+ */
+public class SimpleHTTPServer {
+	private Controller controller;
+	private APIHandler apiHandler;
+	private HttpServer server;
+	
+	private static final int DEFAULT_BACKLOG = 10;
+	
+	/**
+	 * Binds to the port specified in {@code controller.configMap}
+	 * @throws IOException - when failed to start the server
+	 */
+	public SimpleHTTPServer(Controller controller, APIHandler apiHandler) throws IOException {
+		this.controller = controller;
+		this.apiHandler = apiHandler;
+		
+		int ctrlPort = Integer.parseInt(controller.configMap.get("CtrlPort"));
+		
+		server = HttpServer.create(new InetSocketAddress(ctrlPort), DEFAULT_BACKLOG );
+		server.createContext("/createTenant", new createTenantHandler());
+		server.createContext("/deleteTenant", new deleteTenantHandler());
+		
+
+
+	}
+
+	/**
+	 * Starts the HTTP server
+	 */
+	public void start() {
+		server.start();
+	}
+	
+	private class createTenantHandler implements HttpHandler {
+
+		@Override
+		public void handle(HttpExchange arg0) throws IOException {
+			// TODO Auto-generated method stub
+			
+		}
+		
+	}
+
+}

@@ -1,0 +1,46 @@
+package project;
+
+import java.net.InetSocketAddress;
+
+import com.sun.net.httpserver.HttpServer;
+
+/**
+ * A simple HTTP server for supporting external API access.
+ * Currently supporting API contexts are following:
+ * Note that all message body needs to be JSON form
+ * 
+ * + (POST) /createTenant
+ * 		- POST body: {"network" : <network name>}
+ * 		- response body : {"network" : <network name> , "id" : <network id created> } on success
+ * 						  {"network" : <network name> , "id" : "error" } on error
+ * + /
+ * 
+ * @author TAISHI
+ */
+public class SimpleHTTPServer {
+	private Controller controller;
+	private APIHandler apiHandler;
+	private HttpServer server;
+	
+	private static final int DEFAULT_BACKLOG = 10;
+
+	/**
+	 * Binds to the port specified in {@code controller.configMap}
+	 */
+	public SimpleHTTPServer(Controller controller, APIHandler apiHandler) {
+		int ctrlPort = Integer.parseInt(controller.configMap.get("CtrlPort"));
+		
+		server = HttpServer.create(new InetSocketAddress(ctrlPort), DEFAULT_BACKLOG );
+		
+
+
+	}
+
+	/**
+	 * Starts the HTTP server
+	 */
+	public void start() {
+		server.start();
+	}
+
+}

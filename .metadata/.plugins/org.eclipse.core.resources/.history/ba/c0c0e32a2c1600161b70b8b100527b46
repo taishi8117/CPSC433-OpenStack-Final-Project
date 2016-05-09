@@ -1,0 +1,253 @@
+package project;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Scanner;
+
+import org.apache.commons.io.IOUtils;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
+/**
+ * A simple HTTP server for supporting external API access.
+ * Currently supporting API contexts are following:
+ * Note that all message body needs to be JSON form
+ * 
+ * + (POST) /createTenant
+ * 		- POST body: {"network" : <network name>}
+ * 		- response body : {"method" : "createTenant", "network" : <network name> , "networkId" : <network id created> , "tenantID" : <tenant id created> } on success
+ * 						  {"method" : "createTenant", "network" : <network name> , "error" : "true" } on error
+ * 
+ * + (POST) /deleteTenant
+ * 		- POST body: {"tenantId" : <tenant id to delete>}
+ * 		- response body : {"method" : "deleteTenant", "tenantId" : <tenant id to delete> , "success" : ("true"|"false") }
+ * 
+ * + (POST) /getTenantDetail
+ * 		- POST body: {"tenantId" : <tenant id for which to retrieve the detail> }
+ * 		- response body : {"method" : "getTenantDetail" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : (null|<subnet id>) }
+ * 
+ * + (POST) /createSubnet
+ * 		- POST body: {"tenantId" : <tenant id> , "networkId" : <network id> , "domain" : <domain name to create for the subnet> }
+ * 		- response body : {"method" : "createSubnet" , "tenantId" : <tenant id> , "networkId" : <network id>, "subnetId" : <subnet id> , "domain" : <domain name> } on success
+ * 						  {"method" : "createSubnet" , "tenantId" : <tenant id> , "networkId" : <network id>, "error" : "true" } on error
+ * 
+ * + (POST) /destroySubnet
+ * 		- POST body : {"tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> }
+ * 		- response body : {"method" : "destroySubnet" , "tenantId" : <tenant id> , "networkId" : <network id>" , "subnetId" : <subnet id> , "success" : ("true"|"false") }
+ * 
+ * + (POST) /getSubnetDetail
+ * 		- POST body: {"tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> }
+ * 		- response body : {"method" : "getSubnetDetail" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , {stuff from Subnet.getDetail()} ..... } on success
+ *						  {"method" : "getSubnetDetail" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "error" : "true" } on error
+ *
+ * + (POST) /createServer
+ * 		- POST body: {"tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "servername" : <server name> , "password" : <password for default user> }
+ * 		- response body : {"method" : "createServer" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "serverId" : <server id created> , "servername" : <server name> , "password" : <password> } on success
+ *						  {"method" : "createServer" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "error" : "true" } on error
+ * 
+ * + (POST) /destroyServer
+ * 		- POST body : {"tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "serverId" : <server id>}
+ * 		- response body : {"method" : "destroyServer" , "tenantId" : <tenant id> , "networkId" : <network id>" , "subnetId" : <subnet id> , "serverId" : <server id> , "success" : ("true"|"false") }
+ * 
+ * + (POST) /listServer
+ * 		- POST body : {"tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> }
+ * 		- response body : {"method" : "listServer" , "tenantId" : <tenant id> , "networkId" : <network id>" , "subnetId" : <subnet id> , {stuff from APIHandler.listServers()} .... } on success
+ * 		                  {"method" : "listServer" , "tenantId" : <tenant id> , "networkId" : <network id>" , "subnetId" : <subnet id> , "error" : "true" } on error
+ * 
+ * + (POST) /getServerDetail
+ * 		- POST body: {"tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "serverId" : <server id> }
+ * 		- response body : {"method" : "getServerDetail" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "serverId" : <server id> ,{stuff from VirtualServer.getServerDetail()} ..... } on success
+ *						  {"method" : "getServerDetail" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "serverId" : <server id> ,"error" : "true" } on error
+ * 
+ * 
+ * @author TAISHI
+ */
+public class SimpleHTTPServer {
+	private Controller controller;
+	private APIHandler apiHandler;
+	private HttpServer server;
+	
+	private static final int DEFAULT_BACKLOG = 10;
+	
+	/**
+	 * Binds to the port specified in {@code controller.configMap}
+	 * @throws IOException - when failed to start the server
+	 */
+	public SimpleHTTPServer(Controller controller, APIHandler apiHandler) throws IOException {
+		this.controller = controller;
+		this.apiHandler = apiHandler;
+		
+		int ctrlPort = Integer.parseInt(controller.configMap.get("CtrlPort"));
+		
+		server = HttpServer.create(new InetSocketAddress(ctrlPort), DEFAULT_BACKLOG );
+		server.createContext("/createTenant", new APICallHandler());
+		server.createContext("/deleteTenant", new APICallHandler());
+		server.createContext("/getTenantDetail", new APICallHandler());
+		
+		server.createContext("/createSubnet", new APICallHandler());
+		server.createContext("/destroySubnet", new APICallHandler());
+		server.createContext("/getSubnetDetail", new APICallHandler());
+
+		server.createContext("/createServer", new APICallHandler());
+		server.createContext("/destroyServer", new APICallHandler());
+		server.createContext("/listServer", new APICallHandler());
+		server.createContext("/getServerDetail", new APICallHandler());
+		
+		server.setExecutor(null);
+	}
+
+	/**
+	 * Starts the HTTP server
+	 */
+	public void start() {
+		server.start();
+	}
+	
+	private class APICallHandler implements HttpHandler {
+
+		@Override
+		public void handle(HttpExchange t) throws IOException {
+			String method = t.getRequestMethod();
+			if (!method.equals("POST")) {
+				//not supporting
+				String errorResponse = "non-POST method not allowed";
+
+				byte[] resBytes = errorResponse.getBytes("UTF-8");
+				t.sendResponseHeaders(405, resBytes.length);
+				OutputStream os = t.getResponseBody();
+				os.write(resBytes);
+				os.close();
+				return;
+			}
+			
+			
+			String postStr = IOUtils.toString(t.getRequestBody(), "UTF-8");
+			JSONObject obj;
+
+			try {
+				obj = (JSONObject) JSONValue.parseWithException(postStr);
+			} catch (ParseException e) {
+				e.printStackTrace();
+
+				//bad request
+				String errorResponse = "Bad request -- JSON couldn't be parsed";
+
+				byte[] resBytes = errorResponse.getBytes("UTF-8");
+				t.sendResponseHeaders(400, resBytes.length);
+				OutputStream os = t.getResponseBody();
+				os.write(resBytes);
+				os.close();
+				return;
+			}
+
+			try {
+				String api = t.getHttpContext().getPath();
+				String response;
+				
+				if (api.equals("/createTenant")) {
+					response = createTenantHandler(obj);
+				}else if (api.equals("/deleteTenant")) {
+					response = deleteTenantHandler(obj);
+				}else if (api.equals("/getTenantDetail")) {
+					response = getTenantDetailHandler(obj);
+				}else if (api.equals("/createSubnet")) {
+					response = createSubnetHandler(obj);
+				}else if (api.equals("/destroySubnet")) {
+					response = destroySubnetHandler(obj);
+				}else if (api.equals("/getSubnetDetail")) {
+					response = getSubnetDetailHandler(obj);
+				}else if (api.equals("/createServer")) {
+					response = createServerHandler(obj);
+				}else if (api.equals("/destroyServer")) {
+					response = destroyServerHandler(obj);
+				}else if (api.equals("/listServer")) {
+					response = listServerHandler(obj);
+				}else if (api.equals("/getServerDetail")) {
+					response = getServerDetailHandler(obj);
+				}else {
+					//error
+					throw new Exception("WEIRD");
+				}
+				
+				byte[] resBytes = response.getBytes("UTF-8");
+				t.sendResponseHeaders(200, resBytes.length);
+				OutputStream os = t.getResponseBody();
+				os.write(resBytes);
+				os.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+				String errorResponse = "Internal Server Error...";
+
+				byte[] resBytes = errorResponse.getBytes("UTF-8");
+				t.sendResponseHeaders(500, resBytes.length);
+				OutputStream os = t.getResponseBody();
+				os.write(resBytes);
+				os.close();
+			}
+			
+		}
+		
+		/* API handler -- returns String form of JSON */
+
+		private String createTenantHandler(JSONObject obj) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		private String deleteTenantHandler(JSONObject obj) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		private String getTenantDetailHandler(JSONObject obj) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		private String createSubnetHandler(JSONObject obj) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+		private String destroySubnetHandler(JSONObject obj) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		private String getSubnetDetailHandler(JSONObject obj) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+
+
+		private String createServerHandler(JSONObject obj) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		private String destroyServerHandler(JSONObject obj) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		private String getServerDetailHandler(JSONObject obj) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		private String listServerHandler(JSONObject obj) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		
+	}
+}

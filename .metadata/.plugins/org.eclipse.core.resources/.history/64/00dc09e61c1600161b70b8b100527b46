@@ -1,0 +1,10 @@
+package project;
+
+/**
+ * A simple HTTP server for supporting external API access.
+ * 
+ * @author TAISHI
+ */
+public class SimpleHTTPServer {
+
+}
