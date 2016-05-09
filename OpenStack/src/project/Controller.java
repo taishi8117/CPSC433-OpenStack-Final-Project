@@ -15,8 +15,8 @@ import object.Port;
 
 /**
  * Controller Instance
- * 
- * 
+ *
+ *
  * Note that in this version, IPAddress of a range 192.168.(some number).0/24 is assigned
  * for each subnet. IT IS HARCODED NOW!!!
  * @author TAISHI
@@ -33,23 +33,25 @@ public class Controller {
 
 	// maps portNums to Port instance
 	public HashMap<Integer, Port> portMap;
-	
+
 	// list of used subnet addresses (in the form of 192.168.(some number).0)
 	private ArrayList<Inet4Address> usedSubnetAddrList;
-	
+
 	// list of used bridge names
 	private ArrayList<String> usedBridgeNameList;
 
 	// Miscellaneous
 	public Random randomGen;
 
+	// where we store scripts
+    private String scriptDirectory;
 
 	public Controller(HashMap<String,String> configMap) throws Exception {
 		this.tenantMap = new HashMap<Long, HashMap<Long,Network>>();
 		this.randomGen = new Random();
 		this.dnsServer = new DNS();
 		this.configMap = configMap;
-		
+
 		//port map init
 		this.portMap = new HashMap<>();
 		try {
@@ -58,11 +60,11 @@ public class Controller {
 		} catch (Exception e) {
 			throw new Exception("Couldn't parse CtrlPort");
 		}
-		
+
 		this.usedSubnetAddrList = new ArrayList<>();
 		this.usedBridgeNameList = new ArrayList<>();
-		
-		
+
+
 		// 192.168.0.0 - 192.168.15.0 is illegal (reserved for host machine)
 		for (int i = 0; i < 16; i++) {
 			byte[] rawAddr = new byte[]{(byte) 192,(byte) 168,(byte) i, (byte) 0};
@@ -75,7 +77,8 @@ public class Controller {
 			}
 			usedSubnetAddrList.add(addr);
 		}
-		
+
+		this.scriptDirectory = this.configMap.get("LocScript");
 	}
 
 
@@ -85,17 +88,17 @@ public class Controller {
 	 * Initialize SubnetAddress instance and returns it
 	 * Should be called when a new subnet is created to assign
 	 * the range of IP address
-	 * 
+	 *
 	 * For the sake of simplicity, we only use 192.168.(available).0/24
 	 * where available is in the range of 16-255
-	 * @param subnetID 
+	 * @param subnetID
 	 * @return SubnetAddress - initialized subnet address object on success, o.w. null
 	 */
 	public SubnetAddress getAvailableSubnetAddr(long subnetID) {
 		// maintain the range of private IP address that is already used by some other networks
 		// assign a unique bridge name for the subnet
 		// return available range of IP address as SubnetAddress instance
-		
+
 		byte[] rawSubnetAddr = new byte[4];
 		rawSubnetAddr[0] = (byte) 192;
 		rawSubnetAddr[1] = (byte) 168;
@@ -103,18 +106,18 @@ public class Controller {
 		rawSubnetAddr[3] = (byte) 0;
 
 		int mask = 24;
-		
+
 		for (int i = 16; i < 256; i++) {
 			rawSubnetAddr[2] = (byte) i;
 			Inet4Address subnetAddr;
-			
+
 			try {
 				subnetAddr = (Inet4Address) Inet4Address.getByAddress(rawSubnetAddr);
 			} catch (UnknownHostException e) {
 				// shouldn't happen
 				continue;
 			}
-			
+
 			if (!isSubnetAddrAlreadyRegistered(subnetAddr)) {
 				String bridgeName = assignNewSubnetBridgeName();
 				if (bridgeName == null) {
@@ -131,10 +134,10 @@ public class Controller {
 				return sa;
 			}
 		}
-		
+
 		return null;
 	}
-	
+
 	public Collection<Network> getNetworkList(long tenantID) throws Exception{
 		HashMap<Long, Network> networkMap = tenantMap.get(tenantID);
 		if (networkMap == null) {
@@ -168,7 +171,7 @@ public class Controller {
 		}
 		return false;
 	}
-	
+
 	private boolean isBridgeNameAlreadyRegistered(String bridgeName) {
 		if (usedBridgeNameList.contains(bridgeName)) {
 			return true;
@@ -176,7 +179,7 @@ public class Controller {
 		return false;
 	}
 
-	
+
 	/**
 	 * Deregisters SubnetAddress instance from this application
 	 * Should be called only from {@code destroySubnetAddress} method
@@ -205,7 +208,7 @@ public class Controller {
 		tenantMap.put(tenantID, networkMap);
 		return tenantID;
 	}
-	
+
 	/**
 	 * Deletes all resources associated with a specified tenant
 	 * @throws Exception - when couldn't find such tenant
@@ -264,6 +267,8 @@ public class Controller {
 
 	/**
 	 * Registers a new open port to this network.
+	 * @param int - 0 to randomly generate a port number
+	 *            [number] to generate a port at port # [number]
 	 * @return port number that was registered or null if already registered
 	 */
 	public Port registerNewPort(int number) {
@@ -271,13 +276,65 @@ public class Controller {
 		if (portNum == 0){
 			// randomly generate port number until it finds a new one
 			do {
-				portNum = (int) this.randomGen.nextLong();
+				portNum = (int) ((this.randomGen.nextLong()) % 65000);
+				if (portNum <= 1024){
+					continue;
+				}
 			} while (portMap.containsKey(portNum));
 		}
 		if (portMap.containsKey(portNum)) // specified port number is occupied
 			return null;
-		return new Port(number, this);
+		Port newPort = new Port(number, this);
+		portMap.put(number, newPort);
+		return newPort;
 	}
+
+
+	/**
+	 * establishRule - creates a rule in IP table of host machine for a specified routing config
+	 * @param up/downstream Addr - address to receive/download from
+	 * @param up/downstream port - port to receive/download from
+	 */
+
+    // Establishes the rules in iptable on NAT for both prerouting from and to the VM
+    public void establishRule(Inet4Address upstreamAddress, int upstreamPort,Inet4Address downstreamAddress,
+                              int downstreamPort){
+        String addRuleScript = scriptDirectory + "/add_rule.sh";
+
+        ProcessBuilder pb = new ProcessBuilder("/bin/bash", addRuleScript);
+        pb.environment().put("UPSTREAMADDR", upstreamAddress.getHostAddress());
+        pb.environment().put("DOWNSTREAMADDR", downstreamAddress.getHostAddress());
+        pb.environment().put("UPSTREAMPORT", Integer.toString(upstreamPort));
+        pb.environment().put("DOWNSTREAMPORT", Integer.toString(downstreamPort));
+
+        Process p;
+
+        try {
+            p = pb.start();
+        } catch (Exception e) {
+            Debug.redDebug("Error with executing add_rule.sh");
+        }
+
+    }
+
+    // Removes this rule from the IP tables (specifying args)
+    public void destroyRule(Inet4Address upstreamAddress, int upstreamPort,Inet4Address downstreamAddress,
+                            int downstreamPort){
+        String removeRuleScript = scriptDirectory + "/remove_rule.sh";
+        ProcessBuilder pb = new ProcessBuilder("/bin/bash", removeRuleScript);
+        pb.environment().put("UPSTREAMADDR", upstreamAddress.getHostAddress());
+        pb.environment().put("DOWNSTREAMADDR", downstreamAddress.getHostAddress());
+        pb.environment().put("UPSTREAMPORT", Integer.toString(upstreamPort));
+        pb.environment().put("DOWNSTREAMPORT", Integer.toString(downstreamPort));
+
+        Process p;
+
+        try {
+            p = pb.start();
+        } catch (Exception e) {
+            Debug.redDebug("Error with executing remove_rule.sh");
+        }
+    }
 
 
 }
