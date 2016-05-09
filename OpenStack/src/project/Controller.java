@@ -1,11 +1,16 @@
 package project;
 
+import java.net.URL;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Random;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 
 import lib.Debug;
 import lib.SubnetAddress;
@@ -46,6 +51,10 @@ public class Controller {
 	// where we store scripts
     private String scriptDirectory;
 
+    // ip and NIC info for host tables
+    public Inet4Address hostIP;
+    public String hostNIC;
+
 	public Controller(HashMap<String,String> configMap) throws Exception {
 		this.tenantMap = new HashMap<Long, HashMap<Long,Network>>();
 		this.randomGen = new Random();
@@ -79,6 +88,9 @@ public class Controller {
 		}
 
 		this.scriptDirectory = this.configMap.get("LocScript");
+		this.hostIP = getHostIp(); // blocking
+		this.hostNIC= "eth0"; // CONFIGURE TO SET NETWORK INTERFACE CARD
+		setupRouting();
 	}
 
 
@@ -294,11 +306,12 @@ public class Controller {
 	 * establishRule - creates a rule in IP table of host machine for a specified routing config
 	 * @param up/downstream Addr - address to receive/download from
 	 * @param up/downstream port - port to receive/download from
+	 * @param vnicName - name of the network interface card attached to the VM/downstream client
 	 */
 
     // Establishes the rules in iptable on NAT for both prerouting from and to the VM
     public void establishRule(Inet4Address upstreamAddress, int upstreamPort,Inet4Address downstreamAddress,
-                              int downstreamPort){
+                              int downstreamPort, String vnicName){
         String addRuleScript = scriptDirectory + "/add_rule.sh";
 
         ProcessBuilder pb = new ProcessBuilder("/bin/bash", addRuleScript);
@@ -306,6 +319,9 @@ public class Controller {
         pb.environment().put("DOWNSTREAMADDR", downstreamAddress.getHostAddress());
         pb.environment().put("UPSTREAMPORT", Integer.toString(upstreamPort));
         pb.environment().put("DOWNSTREAMPORT", Integer.toString(downstreamPort));
+
+        pb.environment().put("host_interface", this.hostNIC);
+        pb.environment().put("vnet_interface", vnicName);
 
         Process p;
 
@@ -319,13 +335,16 @@ public class Controller {
 
     // Removes this rule from the IP tables (specifying args)
     public void destroyRule(Inet4Address upstreamAddress, int upstreamPort,Inet4Address downstreamAddress,
-                            int downstreamPort){
+                            int downstreamPort, String vnicName){
         String removeRuleScript = scriptDirectory + "/remove_rule.sh";
         ProcessBuilder pb = new ProcessBuilder("/bin/bash", removeRuleScript);
         pb.environment().put("UPSTREAMADDR", upstreamAddress.getHostAddress());
         pb.environment().put("DOWNSTREAMADDR", downstreamAddress.getHostAddress());
         pb.environment().put("UPSTREAMPORT", Integer.toString(upstreamPort));
         pb.environment().put("DOWNSTREAMPORT", Integer.toString(downstreamPort));
+
+        pb.environment().put("host_interface", this.hostNIC);
+        pb.environment().put("vnet_interface", vnicName);
 
         Process p;
 
@@ -336,5 +355,35 @@ public class Controller {
         }
     }
 
+
+   	/**
+	 * Finds the external IP of host by making a web request
+	 * @return Inet4Address - Host's External IP
+	 */
+    public Inet4Address getHostIp() {
+        Inet4Address ipaddress = null;
+
+        URL whatismyip = new URL("http://checkip.amazonaws.com");
+        BufferedReader in = new BufferedReader(new InputStreamReader(
+                        whatismyip.openStream()));
+        String ip = in.readLine(); //you get the IP as a String
+        ipaddress = (Inet4Address) Inet4Address.getByName(ip);
+
+		return ipaddress;
+    }
+
+	/**
+	 * Sets up the intial forward config for routing tables on host machine
+	 */
+    public void setupRouting(){
+        String setupRoutingScript = scriptDirectory + "/routing_setup.sh";
+        ProcessBuilder pb = new ProcessBuilder("/bin/bash", setupRoutingScript);
+        Process p;
+        try {
+            p = pb.start();
+        } catch (Exception e) {
+            Debug.redDebug("Error with executing routing_setup.sh");
+        }
+    }
 
 }
