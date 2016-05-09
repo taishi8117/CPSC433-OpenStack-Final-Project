@@ -361,7 +361,7 @@ public class Controller {
 	 * Finds the external IP of host by making a web request
 	 * @return Inet4Address - Host's External IP
 	 */
-    public Inet4Address getHostIp() throws Exception {
+    public Inet4Address getHostIp() {
         Inet4Address ipaddress = null;
 
         URL whatismyip = new URL("http://checkip.amazonaws.com");
