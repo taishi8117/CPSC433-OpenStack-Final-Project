@@ -66,7 +66,7 @@ public class ReadConfig {
 					ctrlPort = Integer.parseInt(ctrlPortRegex.group(1).trim());
 					if (ctrlPort < 65536) {
 						port_set = true;
-						config_map.put("CtrlPort", Integer.toString(ctrlPort));
+						
 					}
 				} catch (Exception e) {
 					//couldn't parse properly

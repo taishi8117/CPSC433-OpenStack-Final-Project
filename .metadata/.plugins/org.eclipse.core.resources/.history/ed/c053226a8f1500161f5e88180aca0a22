@@ -59,19 +59,6 @@ public class ReadConfig {
 				String loc = locScriptRegex.group(1).trim().replaceAll("/$", "");
 				script_set = true;
 				config_map.put("LocScript", loc);
-			} else if (ctrlPortRegex.reset(line).find()) {
-				// found "CtrlPort: <port to talk to the controller from outside>"
-				int ctrlPort;
-				try {
-					ctrlPort = Integer.parseInt(ctrlPortRegex.group(1).trim());
-					if (ctrlPort < 65536) {
-						port_set = true;
-						config_map.put("CtrlPort", Integer.toString(ctrlPort));
-					}
-				} catch (Exception e) {
-					//couldn't parse properly
-					port_set = false;
-				}
 			}
 		}
 		buffer.close();
@@ -84,10 +71,10 @@ public class ReadConfig {
 	 */
 	public HashMap<String, String> getConfig() throws Exception {
 		parse();
-		if (script_set && port_set) {
+		if (script_set) {
 			return config_map;
 		}else {
-			throw new Exception ("Error parsing configuration: LocScript / CtrlPort invalid");
+			throw new Exception ("Error parsing configuration: LocScript missing");
 		}
 	}
 

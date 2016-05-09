@@ -159,12 +159,8 @@ public class APIHandler {
 			//error finding network!!!!
 			throw new Exception();
 		}
-		Port port = controller.registerNewPort(0);
-		if (port == null) {
-			//shouldn't happen unless all the ports are used
-			throw new Exception("createNewPort(): Port already used");
-		}
-		return port.num;
+		int portNum = controller.registerNewPort(0);
+		return portNum;
 	}
 
 	// Gets a list of occupied ports

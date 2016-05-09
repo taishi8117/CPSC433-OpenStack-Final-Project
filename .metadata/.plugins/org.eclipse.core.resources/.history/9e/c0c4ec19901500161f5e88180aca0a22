@@ -44,7 +44,7 @@ public class Controller {
 	public Random randomGen;
 
 
-	public Controller(HashMap<String,String> configMap) throws Exception {
+	public Controller(HashMap<String,String> configMap) {
 		this.tenantMap = new HashMap<Long, HashMap<Long,Network>>();
 		this.randomGen = new Random();
 		this.dnsServer = new DNS();
@@ -54,9 +54,8 @@ public class Controller {
 		this.portMap = new HashMap<>();
 		try {
 			int ctrlPort = Integer.parseInt(configMap.get("CtrlPort"));
-			this.registerNewPort(ctrlPort);
 		} catch (Exception e) {
-			throw new Exception("Couldn't parse CtrlPort");
+			throw new Exception("");
 		}
 		
 		this.usedSubnetAddrList = new ArrayList<>();
@@ -187,6 +186,17 @@ public class Controller {
 	}
 
 
+	/**
+	 * Assigns available port for a virtual server
+	 * @return Port
+	 */
+	public Port getAvailablePort() {
+		//TODO need to maintain what ports are available
+		//TODO return available port as Port instance
+		//TODO need to register that
+		return null;
+	}
+
 
 	/**
 	 * Registers a new tenant to this controller
@@ -264,19 +274,20 @@ public class Controller {
 
 	/**
 	 * Registers a new open port to this network.
-	 * @return port number that was registered or null if already registered
+	 * @return port number that was registered or -1 if already registered
 	 */
-	public Port registerNewPort(int number) {
+	public int registerNewPort(int number) {
 		int portNum = number;
 		if (portNum == 0){
-			// randomly generate port number until it finds a new one
+			// randomly generate subnet ID until it finds a new one
 			do {
 				portNum = (int) this.randomGen.nextLong();
 			} while (portMap.containsKey(portNum));
 		}
 		if (portMap.containsKey(portNum)) // specified port number is occupied
-			return null;
-		return new Port(number, this);
+			return -1;
+		Port port = new Port(number, this);
+		return number;
 	}
 
 

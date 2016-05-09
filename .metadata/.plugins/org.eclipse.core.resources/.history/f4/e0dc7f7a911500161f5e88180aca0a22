@@ -1,7 +1,6 @@
 package project;
 
 import object.Network;
-import object.Port;
 import object.Subnet;
 import object.VirtualServer;
 import java.net.HttpURLConnection;
@@ -9,6 +8,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import javax.sound.sampled.Port;
 
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -136,7 +136,7 @@ public class APIHandler {
 	 *
 	 * @return int - port number that was created and registered,
 	 * 		   -1 - if the port is already registered
-	 * @throws Exception - when there is no associated network from given IDs or port is already used
+	 * @throws Exception - when there is no associated network from given IDs
 	 */
 	public int createNewPort(long tenantID, long networkID, int number) throws  Exception{
 		Network network = controller.getNetworkFromID(tenantID, networkID);
@@ -144,12 +144,9 @@ public class APIHandler {
 			//error finding network!!!!
 			throw new Exception();
 		}
-		Port port = controller.registerNewPort(number);
-		if (port == null) {
-			throw new Exception("createNewPort(): Port already used");
-		}
+		int portNum = controller.registerNewPort(number);
 
-		return port.num;
+		return portNum;
 	}
 
 	// Create port with unspecified port number. (creates random number)
@@ -159,12 +156,8 @@ public class APIHandler {
 			//error finding network!!!!
 			throw new Exception();
 		}
-		Port port = controller.registerNewPort(0);
-		if (port == null) {
-			//shouldn't happen unless all the ports are used
-			throw new Exception("createNewPort(): Port already used");
-		}
-		return port.num;
+		int portNum = controller.registerNewPort(0);
+		return portNum;
 	}
 
 	// Gets a list of occupied ports

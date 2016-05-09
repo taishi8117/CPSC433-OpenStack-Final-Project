@@ -349,7 +349,7 @@ public class VirtualServer {
 		StringBuilder sshConfigBuilder = new StringBuilder();
 
 		// assigns and registers a new port for SSH connection
-		sshPort = controller.registerNewPort(0);
+		sshPort = controller.getAvailablePort();
 		
 		if (sshPort == null || portMap.containsKey(sshPort.num)) {
 			//TODO this port is for some reason registered already!!! weird!!!!!!!

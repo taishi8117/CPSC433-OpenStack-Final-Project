@@ -36,21 +36,12 @@ public class OpenStack {
 		}
 		
 		
-		try {
-			run(config_map);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Debug.debug(e.getMessage());
-			
-			System.exit(3);
-		}
+		run(config_map);
 	}
 	
 
-	private static void run(HashMap<String, String> config) throws Exception {
+	private static void run(HashMap<String, String> config) {
 		//TODO create a listening server
-
 		Controller controller = new Controller(config);
 		
 	}
