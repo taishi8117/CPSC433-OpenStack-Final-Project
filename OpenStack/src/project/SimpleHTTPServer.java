@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.util.HashMap;
 
 import org.apache.commons.io.IOUtils;
@@ -543,17 +544,13 @@ public class SimpleHTTPServer {
 		private String createPortHandler(JSONObject obj) {
 			long tenantId;
 			long networkId;
-			int portNum = null;
+			int portNum = 0; // generates random port if one not provided
 			try {
 				tenantId = Long.getLong((String) obj.get("tenantId"));
 				networkId = Long.getLong((String) obj.get("networkId"));
 				portNum = Integer.parseInt((String) obj.get("portNumber"));
 			} catch (Exception e) {
 				throw new IllegalArgumentException();
-			}
-
-			if (portNum == null){
-				portNum = 0; // generates a random port number from API if one is not supplied
 			}
 
 			HashMap<String, String> response = new HashMap<>();
@@ -585,7 +582,7 @@ public class SimpleHTTPServer {
 				throw new IllegalArgumentException();
 			}
 
-			if (portNum == null){
+			if (portNum == 0){
 				throw new IllegalArgumentException();
 			}
 
