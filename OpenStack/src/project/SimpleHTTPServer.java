@@ -69,6 +69,26 @@ import lib.Debug;
  * 		- response body : {"method" : "getServerDetail" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "serverId" : <server id> ,{stuff from VirtualServer.getServerDetail()} ..... } on success
  *						  {"method" : "getServerDetail" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "serverId" : <server id> ,"error" : "true" } on error
  *
+ * + (POST) /createPort
+ * 		- POST body: {"tenantId" : <tenant id> , "networkId" : <network id> , "portNumber" (optional) : <desired port number> }
+ * 		- response body : {"method" : "createPort" , "tenantId" : <tenant id> , "networkId" : <network id> , "portNumber" : <assigned port number> } on success
+ *						  {"method" : "createPort" , "tenantId" : <tenant id> , "networkId" : <network id> , "portNumber" : <assigned port number> , "error" : "true" } on error
+ *
+ * + (POST) /destroyPort
+ * 		- POST body : {"portNumber" : <port number to free> }
+ * 		- response body : {"method" : "destroyPort" , "portNumber" : <freed port> , "success" : ("true"|"false") }
+ *
+ *
+ * + (POST) /linkPort
+ * 		- POST body: {"portNumber" : <port number of host to link>  , "downstreamAddress" : <VMs ip address> , "downstreamPort" : <port of VM> , "vnicName" : <name of network interface of vm> }
+ * 		- response body : {"method" : "linkPort" , "downstreamAddress" : <VMs ip address>, "downstreamPort" : <port of VM> , "vnicName" : <name of network interface of vm>, "portNumber": <number of port linked> } on success
+ *						  {"method" : "linkPort" , "downstreamAddress" : <VMs ip address>, "downstreamPort" : <port of VM> , "vnicName" : <name of network interface of vm> , "error" : "true" } on error
+ *
+ * + (POST) /unlinkPort
+ * 		- POST body: {"portNumber" : <port number of host to unlink>  , "downstreamAddress" : <VMs ip address> , "downstreamPort" : <port of VM> , "vnicName" : <name of network interface of vm> }
+ * 		- response body : {"method" : "unlinkPort" , "downstreamAddress" : <VMs ip address>, "downstreamPort" : <port of VM> , "vnicName" : <name of network interface of vm>, "portNumber": <number of port unlinked> } on success
+ *						  {"method" : "unlinkPort" , "downstreamAddress" : <VMs ip address>, "downstreamPort" : <port of VM> , "vnicName" : <name of network interface of vm> , "error" : "true" } on error
+ *
  *
  * @author TAISHI
  */
@@ -554,7 +574,7 @@ public class SimpleHTTPServer {
 			}
 
 			HashMap<String, String> response = new HashMap<>();
-			response.put("method", "createPortHandler");
+			response.put("method", "createPort");
 			response.put("tenantId", Long.toString(tenantId));
 			response.put("networkId", Long.toString(networkId));
 
@@ -587,7 +607,7 @@ public class SimpleHTTPServer {
 			}
 
 			HashMap<String, String> response = new HashMap<>();
-			response.put("method", "destroyPortHandler");
+			response.put("method", "destroyPort");
 
 			try {
 				apiHandler.deletePort(portNum);
@@ -628,7 +648,7 @@ public class SimpleHTTPServer {
 			}
 
 			HashMap<String, String> response = new HashMap<>();
-			response.put("method", "linkPortHandler");
+			response.put("method", "linkPort");
 			response.put("downstreamAddress", downstreamAddress.getHostAddress());
 			response.put("downstreamPort", Integer.toString(downstreamPort));
 			response.put("vnicName", vnicName);
@@ -672,7 +692,7 @@ public class SimpleHTTPServer {
 			}
 
 			HashMap<String, String> response = new HashMap<>();
-			response.put("method", "linkPortHandler");
+			response.put("method", "unlinkPort");
 			response.put("downstreamAddress", downstreamAddress.getHostAddress());
 			response.put("downstreamPort", Integer.toString(downstreamPort));
 			response.put("vnicName", vnicName);
