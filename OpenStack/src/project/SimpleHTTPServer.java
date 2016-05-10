@@ -3,6 +3,7 @@ package project;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.Inet4Address;
 import java.util.HashMap;
 
 import org.apache.commons.io.IOUtils;
@@ -20,29 +21,29 @@ import lib.Debug;
  * A simple HTTP server for supporting external API access.
  * Currently supporting API contexts are following:
  * Note that all message body needs to be JSON form
- * 
+ *
  * + (POST) /createTenant
  * 		- POST body: {"network" : <network name>}
  * 		- response body : {"method" : "createTenant", "network" : <network name> , "networkId" : <network id created> , "tenantID" : <tenant id created> } on success
  * 						  {"method" : "createTenant", "network" : <network name> , "error" : "true" } on error
- * 
+ *
  * + (POST) /deleteTenant
  * 		- POST body: {"tenantId" : <tenant id to delete>}
  * 		- response body : {"method" : "deleteTenant", "tenantId" : <tenant id to delete> , "success" : ("true"|"false") }
- * 
+ *
  * + (POST) /getTenantDetail
  * 		- POST body: {"tenantId" : <tenant id for which to retrieve the detail> }
  * 		- response body : {"method" : "getTenantDetail" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : (null|<subnet id>) }
- * 
+ *
  * + (POST) /createSubnet
  * 		- POST body: {"tenantId" : <tenant id> , "networkId" : <network id> , "domain" : <domain name to create for the subnet> }
  * 		- response body : {"method" : "createSubnet" , "tenantId" : <tenant id> , "networkId" : <network id>, "subnetId" : <subnet id> , "domain" : <domain name> } on success
  * 						  {"method" : "createSubnet" , "tenantId" : <tenant id> , "networkId" : <network id>, "error" : "true" } on error
- * 
+ *
  * + (POST) /destroySubnet
  * 		- POST body : {"tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> }
  * 		- response body : {"method" : "destroySubnet" , "tenantId" : <tenant id> , "networkId" : <network id>" , "subnetId" : <subnet id> , "success" : ("true"|"false") }
- * 
+ *
  * + (POST) /getSubnetDetail
  * 		- POST body: {"tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> }
  * 		- response body : {"method" : "getSubnetDetail" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , {stuff from Subnet.getDetail()} ..... } on success
@@ -52,44 +53,44 @@ import lib.Debug;
  * 		- POST body: {"tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "servername" : <server name> , "password" : <password for default user> }
  * 		- response body : {"method" : "createServer" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "serverId" : <server id created> , "servername" : <server name> , "password" : <password> } on success
  *						  {"method" : "createServer" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "error" : "true" } on error
- * 
+ *
  * + (POST) /destroyServer
  * 		- POST body : {"tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "serverId" : <server id>}
  * 		- response body : {"method" : "destroyServer" , "tenantId" : <tenant id> , "networkId" : <network id>" , "subnetId" : <subnet id> , "serverId" : <server id> , "success" : ("true"|"false") }
- * 
+ *
  * + (POST) /listServer
  * 		- POST body : {"tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> }
  * 		- response body : {"method" : "listServer" , "tenantId" : <tenant id> , "networkId" : <network id>" , "subnetId" : <subnet id> , {stuff from APIHandler.listServers()} .... } on success
  * 		                  {"method" : "listServer" , "tenantId" : <tenant id> , "networkId" : <network id>" , "subnetId" : <subnet id> , "error" : "true" } on error
- * 
+ *
  * + (POST) /getServerDetail
  * 		- POST body: {"tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "serverId" : <server id> }
  * 		- response body : {"method" : "getServerDetail" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "serverId" : <server id> ,{stuff from VirtualServer.getServerDetail()} ..... } on success
  *						  {"method" : "getServerDetail" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "serverId" : <server id> ,"error" : "true" } on error
- * 
- * 
+ *
+ *
  * @author TAISHI
  */
 public class SimpleHTTPServer {
 	private APIHandler apiHandler;
 	private HttpServer server;
-	
+
 	private static final int DEFAULT_BACKLOG = 10;
-	
+
 	/**
 	 * Binds to the port specified in {@code controller.configMap}
 	 * @throws IOException - when failed to start the server
 	 */
 	public SimpleHTTPServer(Controller controller, APIHandler apiHandler) throws IOException {
 		this.apiHandler = apiHandler;
-		
+
 		int ctrlPort = Integer.parseInt(controller.configMap.get("CtrlPort"));
-		
+
 		server = HttpServer.create(new InetSocketAddress(ctrlPort), DEFAULT_BACKLOG );
 		server.createContext("/createTenant", new APICallHandler());
 		server.createContext("/deleteTenant", new APICallHandler());
 		server.createContext("/getTenantDetail", new APICallHandler());
-		
+
 		server.createContext("/createSubnet", new APICallHandler());
 		server.createContext("/destroySubnet", new APICallHandler());
 		server.createContext("/getSubnetDetail", new APICallHandler());
@@ -98,7 +99,12 @@ public class SimpleHTTPServer {
 		server.createContext("/destroyServer", new APICallHandler());
 		server.createContext("/listServer", new APICallHandler());
 		server.createContext("/getServerDetail", new APICallHandler());
-		
+
+		server.createContext("/createPort", new APICallHandler());
+		server.createContext("/destroyPort", new APICallHandler());
+		server.createContext("/linkPort", new APICallHandler());
+		server.createContext("/unlinkPort", new APICallHandler());
+
 		server.setExecutor(null);
 	}
 
@@ -108,7 +114,7 @@ public class SimpleHTTPServer {
 	public void start() {
 		server.start();
 	}
-	
+
 	private class APICallHandler implements HttpHandler {
 
 		@Override
@@ -125,8 +131,8 @@ public class SimpleHTTPServer {
 				os.close();
 				return;
 			}
-			
-			
+
+
 			String postStr = IOUtils.toString(t.getRequestBody(), "UTF-8");
 			JSONObject obj;
 
@@ -149,7 +155,7 @@ public class SimpleHTTPServer {
 			try {
 				String api = t.getHttpContext().getPath();
 				String response;
-				
+
 				if (api.equals("/createTenant")) {
 					response = createTenantHandler(obj);
 				}else if (api.equals("/deleteTenant")) {
@@ -170,11 +176,19 @@ public class SimpleHTTPServer {
 					response = listServerHandler(obj);
 				}else if (api.equals("/getServerDetail")) {
 					response = getServerDetailHandler(obj);
+				}else if (api.equals("/createPort")) {
+					response = createPortHandler(obj);
+				}else if (api.equals("/destroyPort")) {
+					response = destroyPortHandler(obj);
+				}else if (api.equals("/linkPort")) {
+					response = linkPortHandler(obj);
+				}else if (api.equals("/unlinkPort")) {
+					response = unlinkPortHandler(obj);
 				}else {
 					//error
 					throw new Exception("WEIRD");
 				}
-				
+
 				byte[] resBytes = response.getBytes("UTF-8");
 				t.sendResponseHeaders(200, resBytes.length);
 				OutputStream os = t.getResponseBody();
@@ -203,9 +217,9 @@ public class SimpleHTTPServer {
 				os.write(resBytes);
 				os.close();
 			}
-			
+
 		}
-		
+
 		/* API handler -- returns String form of JSON */
 
 		private String createTenantHandler(JSONObject obj) {
@@ -213,7 +227,7 @@ public class SimpleHTTPServer {
 			if (ntwkName == null) {
 				throw new IllegalArgumentException();
 			}
-			
+
 			HashMap<String,String> response;
 			try {
 				response = apiHandler.createNewTenantAndNetwork(ntwkName);
@@ -229,7 +243,7 @@ public class SimpleHTTPServer {
 				response.put("error", "true");
 			}
 			response.put("method", "createTenant");
-			
+
 			return new JSONObject(response).toJSONString();
 		}
 
@@ -240,11 +254,11 @@ public class SimpleHTTPServer {
 			} catch (Exception e) {
 				throw new IllegalArgumentException();
 			}
-			
+
 			HashMap<String, String> response = new HashMap<>();
 			response.put("method", "deleteTenant");
 			response.put("tenantId", Long.toString(tenantId));
-			
+
 			try {
 				apiHandler.deleteTenant(tenantId);
 				response.put("success", "true");
@@ -255,7 +269,7 @@ public class SimpleHTTPServer {
 				}
 				response.put("success", "false");
 			}
-			
+
 
 			return new JSONObject(response).toJSONString();
 		}
@@ -267,11 +281,11 @@ public class SimpleHTTPServer {
 			} catch (Exception e) {
 				throw new IllegalArgumentException();
 			}
-			
+
 			HashMap<String, String> response = new HashMap<>();
 			response.put("method", "getTenantDetail");
 			response.put("tenantId", Long.toString(tenantId));
-			
+
 			try {
 				response.putAll(apiHandler.getTenantInfo(tenantId));
 			} catch (Exception e) {
@@ -281,7 +295,7 @@ public class SimpleHTTPServer {
 				}
 				response.put("error", "true");
 			}
-			
+
 			return new JSONObject(response).toJSONString();
 		}
 
@@ -296,17 +310,17 @@ public class SimpleHTTPServer {
 			} catch (Exception e) {
 				throw new IllegalArgumentException();
 			}
-			
+
 			if (domain == null) {
 				throw new IllegalArgumentException();
 			}
-			
-			
+
+
 			HashMap<String, String> response = new HashMap<>();
 			response.put("method", "createSubnet");
 			response.put("tenantId", Long.toString(tenantId));
 			response.put("networkId", Long.toString(networkId));
-			
+
 			try {
 				long subnetId = apiHandler.createNewSubnet(tenantId, networkId, domain);
 				response.put("subnetId",Long.toString(subnetId));
@@ -318,7 +332,7 @@ public class SimpleHTTPServer {
 				}
 				response.put("error", "true");
 			}
-			
+
 			return new JSONObject(response).toJSONString();
 		}
 
@@ -333,13 +347,13 @@ public class SimpleHTTPServer {
 			} catch (Exception e) {
 				throw new IllegalArgumentException();
 			}
-			
+
 			HashMap<String, String> response = new HashMap<>();
 			response.put("method", "destroySubnet");
 			response.put("tenantId", Long.toString(tenantId));
 			response.put("networkId", Long.toString(networkId));
 			response.put("subnetId", Long.toString(subnetId));
-			
+
 			try {
 				apiHandler.destroySubnet(tenantId, networkId, subnetId);
 				response.put("success","true");
@@ -350,7 +364,7 @@ public class SimpleHTTPServer {
 				}
 				response.put("success","false");
 			}
-			
+
 			return new JSONObject(response).toJSONString();
 		}
 
@@ -371,8 +385,8 @@ public class SimpleHTTPServer {
 			response.put("tenantId", Long.toString(tenantId));
 			response.put("networkId", Long.toString(networkId));
 			response.put("subnetId", Long.toString(subnetId));
-			
-			
+
+
 			try {
 				response.putAll(apiHandler.getSubnetDetails(tenantId, networkId, subnetId));
 			} catch (Exception e) {
@@ -382,7 +396,7 @@ public class SimpleHTTPServer {
 				}
 				response.put("error","true");
 			}
-			
+
 			return new JSONObject(response).toJSONString();
 		}
 
@@ -402,17 +416,17 @@ public class SimpleHTTPServer {
 			} catch (Exception e) {
 				throw new IllegalArgumentException();
 			}
-			
+
 			if (servername == null || password == null) {
 				throw new IllegalArgumentException();
 			}
-			
+
 			HashMap<String, String> response = new HashMap<>();
 			response.put("method", "createServer");
 			response.put("tenantId", Long.toString(tenantId));
 			response.put("networkId", Long.toString(networkId));
 			response.put("subnetId", Long.toString(subnetId));
-			
+
 			try {
 				long serverId = apiHandler.createNewServer(tenantId, networkId, subnetId, servername, password);
 				response.put("serverId", Long.toString(serverId));
@@ -425,7 +439,7 @@ public class SimpleHTTPServer {
 				}
 				response.put("error","true");
 			}
-			
+
 			return new JSONObject(response).toJSONString();
 		}
 
@@ -449,11 +463,11 @@ public class SimpleHTTPServer {
 			response.put("networkId", Long.toString(networkId));
 			response.put("subnetId", Long.toString(subnetId));
 			response.put("serverId", Long.toString(serverId));
-			
-			
+
+
 			try {
 				apiHandler.destroyServer(tenantId, networkId, subnetId, serverId);
-				response.put("success","false");
+				response.put("success","true");
 			} catch (Exception e) {
 				if (Debug.IS_DEBUG) {
 					e.printStackTrace();
@@ -461,7 +475,7 @@ public class SimpleHTTPServer {
 				}
 				response.put("success","false");
 			}
-			
+
 			return new JSONObject(response).toJSONString();
 		}
 
@@ -482,7 +496,7 @@ public class SimpleHTTPServer {
 			response.put("tenantId", Long.toString(tenantId));
 			response.put("networkId", Long.toString(networkId));
 			response.put("subnetId", Long.toString(subnetId));
-			
+
 			try {
 				response.putAll(apiHandler.listServers(tenantId, networkId, subnetId));
 			} catch (Exception e) {
@@ -516,14 +530,169 @@ public class SimpleHTTPServer {
 			response.put("networkId", Long.toString(networkId));
 			response.put("subnetId", Long.toString(subnetId));
 			response.put("serverId", Long.toString(serverId));
-			
+
 			try {
 				response.putAll(apiHandler.getServerDetails(tenantId, networkId, subnetId, serverId));
 			} catch (Exception e) {
 				response.put("error", "true");
 			}
-			
+
+			return new JSONObject(response).toJSONString();
+		}
+
+		private String createPortHandler(JSONObject obj) {
+			long tenantId;
+			long networkId;
+			int portNum = null;
+			try {
+				tenantId = Long.getLong((String) obj.get("tenantId"));
+				networkId = Long.getLong((String) obj.get("networkId"));
+				portNum = Integer.parseInt((String) obj.get("portNumber"));
+			} catch (Exception e) {
+				throw new IllegalArgumentException();
+			}
+
+			if (portNum == null){
+				portNum = 0; // generates a random port number from API if one is not supplied
+			}
+
+			HashMap<String, String> response = new HashMap<>();
+			response.put("method", "createPortHandler");
+			response.put("tenantId", Long.toString(tenantId));
+			response.put("networkId", Long.toString(networkId));
+
+			try {
+				int portNumber = apiHandler.createNewPort(tenantId, networkId, portNum);
+				response.put("portNumber", Integer.toString(portNumber));
+			} catch (Exception e) {
+				if (Debug.IS_DEBUG) {
+					e.printStackTrace();
+					Debug.debug(e.getMessage());
+				}
+				response.put("error","true");
+			}
+
+			return new JSONObject(response).toJSONString();
+		}
+
+
+		// DESTROY PORT
+		private String destroyPortHandler(JSONObject obj) {
+			int portNum;
+			try {
+				portNum = Integer.parseInt((String) obj.get("portNumber"));
+			} catch (Exception e) {
+				throw new IllegalArgumentException();
+			}
+
+			if (portNum == null){
+				throw new IllegalArgumentException();
+			}
+
+			HashMap<String, String> response = new HashMap<>();
+			response.put("method", "destroyPortHandler");
+
+			try {
+				apiHandler.deletePort(portNum);
+				response.put("success", "true");
+			} catch (Exception e) {
+				if (Debug.IS_DEBUG) {
+					e.printStackTrace();
+					Debug.debug(e.getMessage());
+				}
+				response.put("success", "false");
+			}
+
+			return new JSONObject(response).toJSONString();
+		}
+
+		// LINK PORT
+		private String linkPortHandler(JSONObject obj) {
+			int portNum;
+			Inet4Address downstreamAddress;
+			int downstreamPort;
+			String vnicName = null;
+			try {
+				portNum = Integer.parseInt((String) obj.get("portNumber"));
+				downstreamAddress = (Inet4Address) InetAddress.getByName((String) obj.get("downstreamAddress"));
+				downstreamPort = Integer.parseInt((String) obj.get("downstreamPort"));
+				vnicName = (String) obj.get("vnicName");
+			} catch (Exception e) {
+				throw new IllegalArgumentException();
+			}
+
+			if (portNum == 0 || downstreamAddress == null || downstreamPort == 0){
+				throw new IllegalArgumentException();
+			}
+
+			if (vnicName == null){
+				throw new IllegalArgumentException();
+				//TODO: implement a search for network/vnic by ip/port
+			}
+
+			HashMap<String, String> response = new HashMap<>();
+			response.put("method", "linkPortHandler");
+			response.put("downstreamAddress", downstreamAddress.getHostAddress());
+			response.put("downstreamPort", Integer.toString(downstreamPort));
+			response.put("vnicName", vnicName);
+
+			try {
+				int portNumber = apiHandler.linkPort(portNum, downstreamAddress, downstreamPort, vnicName);
+				response.put("portNumber", Integer.toString(portNumber));
+			} catch (Exception e) {
+				if (Debug.IS_DEBUG) {
+					e.printStackTrace();
+					Debug.debug(e.getMessage());
+				}
+				response.put("error","true");
+			}
+
+			return new JSONObject(response).toJSONString();
+		}
+
+		// unlink port
+		private String unlinkPortHandler(JSONObject obj) {
+			int portNum;
+			Inet4Address downstreamAddress;
+			int downstreamPort;
+			String vnicName = null;
+			try {
+				portNum = Integer.parseInt((String) obj.get("portNumber"));
+				downstreamAddress = (Inet4Address) InetAddress.getByName((String) obj.get("downstreamAddress"));
+				downstreamPort = Integer.parseInt((String) obj.get("downstreamPort"));
+				vnicName = (String) obj.get("vnicName");
+			} catch (Exception e) {
+				throw new IllegalArgumentException();
+			}
+
+			if (portNum == 0 || downstreamAddress == null || downstreamPort == 0){
+				throw new IllegalArgumentException();
+			}
+
+			if (vnicName == null){
+				throw new IllegalArgumentException();
+				//TODO: implement a search for network/vnic by ip/port
+			}
+
+			HashMap<String, String> response = new HashMap<>();
+			response.put("method", "linkPortHandler");
+			response.put("downstreamAddress", downstreamAddress.getHostAddress());
+			response.put("downstreamPort", Integer.toString(downstreamPort));
+			response.put("vnicName", vnicName);
+
+			try {
+				int portNumber = apiHandler.unlinkPort(portNum, downstreamAddress, downstreamPort, vnicName);
+				response.put("portNumber", Integer.toString(portNumber));
+			} catch (Exception e) {
+				if (Debug.IS_DEBUG) {
+					e.printStackTrace();
+					Debug.debug(e.getMessage());
+				}
+				response.put("error","true");
+			}
 			return new JSONObject(response).toJSONString();
 		}
 	}
+
+
 }

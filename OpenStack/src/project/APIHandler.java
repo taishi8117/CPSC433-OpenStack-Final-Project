@@ -7,10 +7,11 @@ import object.VirtualServer;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.net.Inet4Address;
 
 public class APIHandler {
 	private Controller controller;
-	
+
 	public APIHandler(Controller controller) {
 		this.controller = controller;
 	}
@@ -40,31 +41,31 @@ public class APIHandler {
 	public void deleteTenant(long tenantID) throws Exception {
 		controller.deregisterTenant(tenantID);
 	}
-	
+
 	/**
 	 * Gives Information about a specified tenant
 	 * It includes:
 	 *  + networkId : network ID for this tenant (just one, since we're implementing just one)
 	 *  + subnetId : subnet ID for this tenant (just one too)
-	 *  
+	 *
 	 *  Note that one can use {@code getSubnetDetails()} to find out more about the subnet
 	 * @throws Exception
 	 */
 	public HashMap<String,String> getTenantInfo(long tenantID) throws Exception {
 		Collection<Network> networks = controller.getNetworkList(tenantID);
 		HashMap<String, String> infoMap = new HashMap<>();
-		
+
 		Network network = networks.iterator().next();
 		if (network == null) {
 			throw new Exception("getTenantInfo(): No network found");
 		}
 		infoMap.put("networkId", Long.toString(network.networkID));
-		
+
 		Subnet subnet = network.getSubnetList().iterator().next();
 		if (subnet != null) {
 			infoMap.put("subnetId", Long.toString(subnet.subnetID));
 		}
-		
+
 		return infoMap;
 	}
 
@@ -86,10 +87,10 @@ public class APIHandler {
 
 		return subnetID;
 	}
-	
+
 	/**
 	 * Destroys a subnet and all associated resources (incl. servers and bridge) for given IDs
-	 * 
+	 *
 	 * The parent network needs to be up.
 	 * @throws Exception - when can't find the subnet
 	 */
@@ -105,10 +106,10 @@ public class APIHandler {
 			//error finding subnet!!!!
 			throw new Exception("createNewServer(): error finding a subnet");
 		}
-		
+
 		subnet.destroy();
 	}
-	
+
 	/**
 	 * Returns the subnet detail in JSON Object
 	 * For further detail, refer to {@code getDetail()} in Subnet
@@ -126,8 +127,8 @@ public class APIHandler {
 			//error finding subnet!!!!
 			throw new Exception("getSubnetDetails(): error finding a subnet");
 		}
-		
-		
+
+
 		return subnet.getDetail();
 	}
 
@@ -154,21 +155,6 @@ public class APIHandler {
 		return port.num;
 	}
 
-	// Create port with unspecified port number. (creates random number)
-	public int createNewPort(long tenantID, long networkID) throws Exception{
-		Network network = controller.getNetworkFromID(tenantID, networkID);
-		if (network == null) {
-			//error finding network!!!!
-			throw new Exception();
-		}
-		Port port = controller.registerNewPort(0);
-		if (port == null) {
-			//shouldn't happen unless all the ports are used
-			throw new Exception("createNewPort(): Port already used");
-		}
-		return port.num;
-	}
-
 	// Gets a list of occupied ports
 	public String listPort() {
 		String occupiedPorts= "Occupied Ports:";
@@ -187,9 +173,13 @@ public class APIHandler {
 		return details.toString();
 	}
 
-	public int updatePort(int portNum) {
-		// TODO: figure out update parameters
-		controller.portMap.get(portNum).update();
+	public int linkPort(int portNum, Inet4Address downstreamAddress, int downstreamPort, String vnicName) {
+		controller.portMap.get(portNum).linkPort(downstreamAddress, downstreamPort, vnicName);
+		return portNum;
+	}
+
+	public int unlinkPort(int portNum, Inet4Address downstreamAddress, int downstreamPort, String vnicName) {
+		controller.portMap.get(portNum).unlinkPort(downstreamAddress, downstreamPort, vnicName);
 		return portNum;
 	}
 
@@ -221,8 +211,8 @@ public class APIHandler {
 		long serverID = subnet.registerNewServer(serverName, password);
 		return serverID;
 	}
-	
-	
+
+
 	/**
 	 * Destroys a server and associated resources (incl. KVM) for given IDs
 	 * @exception Exception - when can't find the server
@@ -237,19 +227,19 @@ public class APIHandler {
 	 * List of virtual servers registered to given IDs.
 	 * This lists only the existing ones -- meaning that if KVM is for sure non-existent,
 	 * then, the returned Object doesn't include that
-	 * 
+	 *
 	 * Format is following:
 	 *   Return: {"${instance-Id}":"${state}", ...}
 	 * Note that ${instance-Id} is in the form of "iid-" + serverName + serverID
 	 * For example, if there are two registered servers
 	 *   - iid-foo1234 : "running" 		("foo" is servername, 1234 is serverID)
 	 *   - iid-bar9876 : "creating"		("bar" is servername, 9876 is serverID)
-	 *   
+	 *
 	 * Then, the string representation of the returned JSONObject would be:
 	 * {"iid-foo1234":"running", "iid-bar9876":"creating"}
-	 * 
-	 * @throws Exception 
-	 * 
+	 *
+	 * @throws Exception
+	 *
 	 */
 	public HashMap<String, String> listServers(long tenantID, long networkID, long subnetID) throws Exception {
 		Network network = controller.getNetworkFromID(tenantID, networkID);
@@ -263,9 +253,9 @@ public class APIHandler {
 			//error finding subnet!!!!
 			throw new Exception("listServers(): error finding a running subnet");
 		}
-		
+
 		HashMap<String, String> list = new HashMap<>();
-		
+
 		Collection<VirtualServer> serverCollection = subnet.getRegisteredServerList();
 
 		for (Iterator<VirtualServer> iterator = serverCollection.iterator(); iterator.hasNext();) {
@@ -286,10 +276,10 @@ public class APIHandler {
 					//weird
 					continue;
 				}
-				
+
 				list.put(server.instanceId, state);
 			}
-			
+
 		}
 		return list;
 	}
@@ -305,10 +295,10 @@ public class APIHandler {
 			//shouldn't happen
 			throw new Exception("getServerDetails(): returned detail map was null");
 		}
-		
+
 		return detailMap;
 	}
-	
+
 	/**
 	 * Get VirtualServer instance that is associated with given IDs
 	 * It DOES NOT check if associated KVM is properly running on host machine
@@ -319,23 +309,23 @@ public class APIHandler {
 		if (network == null || !network.isNetworkUp()) {
 			throw new Exception("getServerInstanceFromId(): error finding a running network");
 		}
-		
+
 		Subnet subnet = network.getSubnetFromID(subnetID);
 		if (subnet == null || !subnet.isRunning()) {
 			throw new Exception("getServerInstanceFromId(): error finding a running subnet");
 		}
-		
+
 		VirtualServer server = subnet.getServerFromID(serverID);
 		// no need to check if server is properly running
 		if (server == null) {
 			throw new Exception("getServerInstanceFromId(): error finding a properly running server");
 		}
-		
+
 		return server;
 	}
 
-	
-	
+
+
 	// let's just not do them now
 	@Deprecated
 	public int startServer() {

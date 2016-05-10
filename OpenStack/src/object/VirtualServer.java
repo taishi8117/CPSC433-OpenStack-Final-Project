@@ -93,10 +93,6 @@ public class VirtualServer {
 	UpdateStateTask updateTask;
 
 
-
-
-	//TODO I have no idea about ports!!!!
-
 	public VirtualServer(Controller controller, Subnet parentSubnet, long serverID, String serverName, String password, String networkCfg) throws Exception {
 		this(controller, parentSubnet, serverID, serverName, password, networkCfg, DEFAULT_DISKSIZE, DEFAULT_NUMCPU, DEFAULT_MEM);
 	}
@@ -360,7 +356,7 @@ public class VirtualServer {
 		portMap.put(sshPort.num, sshPort);
 
 		//create port mapping routing rules
-		controller.establishRule(controller.hostIP ,sshPort.num,dataNIC.ipAddr, sshPort.num, controller.hostNIC);
+		controller.establishRule(controller.hostIP ,sshPort.num,dataNIC.ipAddr, sshPort.num, dataNIC.interfaceName);
 
 		//create sshd_config from sshd_config template
 		sshConfigBuilder.append("        " + "Port " + sshPort.num + "\n");
