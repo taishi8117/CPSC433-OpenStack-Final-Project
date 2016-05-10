@@ -127,6 +127,8 @@ public class SimpleHTTPServer {
 		server.createContext("/unlinkPort", new APICallHandler());
 
 		server.setExecutor(null);
+
+		System.out.println("Listening on port: "+ ctrlPort);
 	}
 
 	/**
