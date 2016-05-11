@@ -9,7 +9,7 @@
 3. sudo ./scripts/kvm_install.sh  (installs the necessary packages for supporting virtual machines)
 4. make run
 
-####APIs Supported: [API Specifications](https://github.com/taishi8117/CPSC433-OpenStack-Final-Project/blob/master/OpenStack/APIDescription.md)
+####APIs Supported: [API Specifications](https://github.com/taishi8117/CPSC433-OpenStack-Final-Project/blob/master/OpenStack/APIDescription.txt)
 
 #####Create in order:
 1. tenants
