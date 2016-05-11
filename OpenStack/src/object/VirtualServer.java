@@ -319,7 +319,7 @@ public class VirtualServer {
 						   .append("    content: |\n")
 						   .append(sshd_cfg);
 
-			
+
 			Debug.debug("User data");
 			Debug.debug(userdataBuilder.toString());
 			// create metadata file at location
@@ -413,7 +413,7 @@ public class VirtualServer {
 		// Deregisters all port associations associated with this VirtualServer
 		for ( int portNum : portMap.keySet() ) {
 			controller.portMap.remove(portNum);
-			controller.destroyRule(controller.hostIP ,portNum,dataNIC.ipAddr, portNum, controller.hostNIC);
+			controller.destroyRule(controller.hostIP ,portNum,dataNIC.ipAddr, portNum, this.parentSubnet.subnetAddress.bridgeName);
 		}
 		portMap.clear();
 
@@ -514,7 +514,7 @@ public class VirtualServer {
 
 	private String getOpenPortList() {
 		StringBuilder openPortBuilder = new StringBuilder();
-		
+
 		for (int portNum : portMap.keySet()) {
 			openPortBuilder.append(portNum + ",");
 		}
