@@ -633,7 +633,7 @@ public class VirtualServer {
 						String status = stateRegex.group(1).trim();
 						Debug.debug("Status found!" + status);
 
-						if (status.equals("active")) {
+						if (status.equals("running")) {
 							// it was active!
 							if (!isDestroyed) {
 								foundRunning();
