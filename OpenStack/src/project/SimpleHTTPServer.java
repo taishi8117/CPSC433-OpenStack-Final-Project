@@ -557,6 +557,10 @@ public class SimpleHTTPServer {
 			try {
 				response.putAll(apiHandler.getServerDetails(tenantId, networkId, subnetId, serverId));
 			} catch (Exception e) {
+				if (Debug.IS_DEBUG) {
+					e.printStackTrace();
+					Debug.debug(e.getMessage());
+				}
 				response.put("error", "true");
 			}
 
