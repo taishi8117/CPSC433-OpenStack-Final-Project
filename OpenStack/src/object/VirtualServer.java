@@ -315,7 +315,7 @@ public class VirtualServer {
 			//write-files option -- sshdnull_config related
 			String sshd_cfg = getSSHConfig();
 			userdataBuilder.append("write_files:\n")
-						   .append("-   path: /etc/ssh/sshd_config")
+						   .append("-   path: /etc/ssh/sshd_config\n")
 						   .append("content: |\n")
 						   .append(sshd_cfg);
 
