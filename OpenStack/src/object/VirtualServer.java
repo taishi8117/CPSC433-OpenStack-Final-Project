@@ -268,6 +268,8 @@ public class VirtualServer {
 					   .append("local-hostname: " + serverName + "\n");
 
 		String strMetadata = metadataBuilder.toString();
+		Debug.debug("Meta data");
+		Debug.boldDebug(strMetadata);
 
 		try {
 			// create metadata file at location
@@ -317,6 +319,9 @@ public class VirtualServer {
 						   .append("content: |\n")
 						   .append(sshd_cfg);
 
+			
+			Debug.debug("User data");
+			Debug.debug(userdataBuilder.toString());
 			// create metadata file at location
 			File file = new File(location);
 
