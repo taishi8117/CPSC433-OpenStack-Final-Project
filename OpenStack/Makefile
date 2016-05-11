@@ -17,4 +17,5 @@ all: $(JAVA_FILES)
 clean:
 	rm -f $(JAVA_FILES:.java=.class)
 
-run: ./run_Openstack.sh
+run:
+	./run_Openstack.sh
