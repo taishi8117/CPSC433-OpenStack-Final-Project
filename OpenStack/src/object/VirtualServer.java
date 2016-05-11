@@ -631,6 +631,7 @@ public class VirtualServer {
 					if (stateRegex.reset(line).find()) {
 						// found the network name
 						String status = stateRegex.group(1).trim();
+						Debug.debug("Status found!" + status);
 
 						if (status.equals("active")) {
 							// it was active!
