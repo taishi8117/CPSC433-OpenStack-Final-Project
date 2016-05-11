@@ -1,59 +1,86 @@
 #!/bin/bash
-# create_server.sh : script to create a virtual server using Ubuntu 14.04 cloud image on kvm
-# Needs to be run as root
 #
-# Usage:
-#	# ./create_server.sh 
-# List of Environment Variables									-- In VirtualServer.java
-# * VSHOST: the instanceID of the server (needs to be unique)	-- instanceId
-# * VSDOMAIN: the domain name in which the server is created		-- parentSubnet.domainName
-# * VROOTDISKSIZE: the disk size for the server in GB			-- diskSize + "G" (e.g. "10G")
-# * VCPUS: the number of CPUs allocated for the server			-- numCpu
-# * VMEM: the amount of memory allocated for the server in MB	-- memSize
-# * VSNETWORK: the network configuration (VNIC) with no space	-- networkCfg
-# * METADATA_FILE: the location of meta-data file				-- locMetadata
-# * USERDATA_FILE: the location of user-data file				-- locUserdata
+# virt-install-cloud.sh : script to start an OpenStack cloud image on kvm
+# version : 1.0
 #
-# Note that this script DOES NOT check if all environment variables are set properly
+# Author : Claude Durocher
+# License : GPLv3
 #
-# Author : Taishi Nojima
-# Referenced from https://github.com/clauded/virt-tools/blob/master/virt-install-cloud.sh
+# ref. http://mojodna.net/2014/05/14/kvm-libvirt-and-ubuntu-14-04.html
 #
-# Requires `kvm_install.sh' to be run in advance
-
+# requires the following packages on Ubuntu host:
+#  apt-get install qemu-kvm libvirt-bin virtinst bridge-utils genisoimage
+# requires the following packages on CentOS host:
+#  yum install qemu-kvm libvirt virt-install bridge-utils genisoimage
+#
 set -x
-
-# assumes that ubuntu 14.04 (trusty) on amd64
+# image selection : trusty, precise, centos7, fedora20, ...
 IMG="trusty"
+# architecture : amd64 or i386
 ARCH="amd64"
-
-# image format: qcow2
+# kvm defaults pool paths
+DEF_POOL=default
+DEF_POOL_PATH=/var/lib/libvirt/images
+# vm prefs : specify vm preferences for your guest
+GUEST=${VSHOST}
+DOMAIN=${VSDOMAIN}
+VROOTDISKSIZE=${VROOTDISKSIZE}
+VCPUS=${VCPUS}
+VMEM=${VMEM}
+NETWORK=${VSNETWORK}
+# guest image format: qcow2 or raw
 FORMAT=qcow2
+# convert image format : yes or no
+CONVERT=no
 # kvm pool
 POOL=vm
 POOL_PATH=/home/vm
+#
 
-# check if metadata file and userdata file exist
-if [[ -r ${METADATA_FILE}  && -r ${USERDATA_FILE} ]]; 
-then
-	echo "Found Metadata_file and Userdata_file"
-else
-	echo "Metadata_file or userdata_file not found"
-	exit 1
-fi
+# don't edit below unless you know wat you're doing!
 
 # check if the script is run as root user
 if [[ $USER != "root" ]]; then
   echo "This script must be run as root!" && exit 1
 fi
 
-
 # download cloud image if not already downloaded
 #  ref. https://openstack.redhat.com/Image_resources
 case $IMG in
+  precise)  IMG_USER="ubuntu"
+            IMG_URL="http://cloud-images.ubuntu.com/server/releases/12.04/release"
+            IMG_NAME="ubuntu-12.04-server-cloudimg-${ARCH}-disk1.img"
+            ;;
   trusty)   IMG_USER="ubuntu"
             IMG_URL="http://cloud-images.ubuntu.com/server/releases/14.04/release"
             IMG_NAME="ubuntu-14.04-server-cloudimg-${ARCH}-disk1.img"
+            ;;
+  centos7)  IMG_USER="centos"
+            IMG_URL="http://cloud.centos.org/centos/7/devel"
+            if [[ $ARCH = "amd64" ]]; then
+              IMG_NAME="CentOS-7-x86_64-GenericCloud.qcow2"
+            else
+              echo "Cloud image not available!"
+              exit 1
+            fi
+            ;;
+  fedora20) IMG_USER="fedora"
+            if [[ $ARCH = "amd64" ]]; then
+              IMG_URL="http://download.fedoraproject.org/pub/fedora/linux/updates/20/Images/x86_64"
+              IMG_NAME="Fedora-x86_64-20-20140407-sda.qcow2"
+            else
+              IMG_URL="http://download.fedoraproject.org/pub/fedora/linux/updates/20/Images/i386"
+              IMG_NAME="Fedora-i386-20-20140407-sda.qcow2"
+            fi
+            ;;
+  wheezy)   IMG_USER="debian"
+            if [[ $ARCH = "amd64" ]]; then
+              IMG_URL="Coud image not available. Use build-openstack-debian-image to build one!"
+              IMG_NAME="debian-wheezy-7.0.0-3-amd64.qcow2"
+            else
+              IMG_NAME="Cloud image not available."
+              exit 1
+            fi
             ;;
   *)        echo "Cloud image not available!"
             exit 1
@@ -75,10 +102,10 @@ fi
 # write the two cloud-init files into an ISO
 genisoimage -output configuration.iso -volid cidata -joliet -rock ${USERDATA_FILE} ${METADATA_FILE}
 # keep a backup of the files for future reference
-cp ${USERDATA_FILE} ${POOL_PATH}/user-data.${VSHOST}
-cp ${METADATA_FILE} ${POOL_PATH}/meta-data.${VSHOST}
+cp ${USERDATA_FILE} ${POOL_PATH}/user-data.${GUEST}
+cp ${METADATA_FILE} ${POOL_PATH}/meta-data.${GUEST}
 # copy ISO into libvirt's directory
-cp configuration.iso ${POOL_PATH}/${VSHOST}.configuration.iso
+cp configuration.iso ${POOL_PATH}/${GUEST}.configuration.iso
 virsh pool-refresh ${POOL}
 
 # copy image to libvirt's pool
@@ -88,33 +115,62 @@ if [[ ! -f ${POOL_PATH}/${IMG_NAME} ]]; then
 fi
 
 # clone cloud image
-virsh vol-clone --pool ${POOL} ${IMG_NAME} ${VSHOST}.root.img
-virsh vol-resize --pool ${POOL} ${VSHOST}.root.img ${VROOTDISKSIZE}
+virsh vol-clone --pool ${POOL} ${IMG_NAME} ${GUEST}.root.img
+virsh vol-resize --pool ${POOL} ${GUEST}.root.img ${VROOTDISKSIZE}
 
+# convert image format
+if [[ "${CONVERT}" == "yes" ]]; then
+  echo "Converting image to format ${FORMAT}..."
+  qemu-img convert -O ${FORMAT} ${POOL_PATH}/${GUEST}.root.img ${POOL_PATH}/${GUEST}.root.img.${FORMAT}
+  rm ${POOL_PATH}/${GUEST}.root.img
+  mv ${POOL_PATH}/${GUEST}.root.img.${FORMAT} ${POOL_PATH}/${GUEST}.root.img
+fi
 
-# POSSIBLY IMPORTANT
-echo "Converting image to format ${FORMAT}..."
-qemu-img convert -O ${FORMAT} ${POOL_PATH}/${VSHOST}.root.img ${POOL_PATH}/${VSHOST}.root.img.${FORMAT}
-rm ${POOL_PATH}/${VSHOST}.root.img
-mv ${POOL_PATH}/${VSHOST}.root.img.${FORMAT} ${POOL_PATH}/${VSHOST}.root.img
-
-
-
-echo "Creating host ${VSHOST}..."
+echo "Creating guest ${GUEST}..."
 virt-install \
-  --name ${VSHOST} \
+  --name ${GUEST} \
   --ram ${VMEM} \
   --vcpus=${VCPUS} \
   --autostart \
   --memballoon virtio \
-  --network ${VSNETWORK} \
+  --network ${NETWORK} \
   --boot hd \
-  --disk vol=${POOL}/${VSHOST}.root.img,device=disk,format=${FORMAT},bus=virtio \
-  --disk vol=${POOL}/${VSHOST}.configuration.iso,device=disk,format=${FORMAT},bus=virtio \
+  --disk vol=${POOL}/${GUEST}.root.img,format=${FORMAT},bus=virtio \
+  --disk vol=${POOL}/${GUEST}.configuration.iso,bus=virtio \
   --noautoconsole
 
+# display result
+echo
+echo "List of running VMs :"
+echo
+virsh list
 
 # cleanup
-rm configuration.iso ${METADATA_FILE} ${USERDATA_FILE}
+rm configuration.iso meta-data user-data
 
-exit 0
+# stuff to remember
+echo
+echo "************************"
+echo "Useful stuff to remember"
+echo "************************"
+echo
+echo "To login to vm guest:"
+echo " sudo virsh console ${GUEST}"
+echo "Default user for cloud image is :"
+echo " ${IMG_USER}"
+echo
+echo "To edit guest vm config:"
+echo " sudo virsh edit ${GUEST}"
+echo
+echo "To create a volume:"
+echo " virsh vol-create-as ${POOL} ${GUEST}.vol1.img 20G --format ${FORMAT}"
+echo "To attach a volume to an existing guest:"
+echo " virsh attach-disk ${GUEST} --source ${POOL_PATH}/${GUEST}.vol1.img --target vdc --driver qemu --subdriver ${FORMAT} --persistent"
+echo "To prepare the newly attached volume on guest:"
+echo " sgdisk -n 1 -g /dev/vdc && && mkfs -t ext4 /dev/vdc1 && sgdisk -c 1:'vol1' -g /dev/vdc && sgdisk -p /dev/vdc"
+echo " mkdir /mnt/vol1"
+echo " echo '/dev/vdc1 /mnt/vol1 ext4 defaults,relatime 0 0' >> /etc/fstab"
+echo
+echo "To shutdown a guest vm:"
+echo "  sudo virsh shutdown ${GUEST}"
+echo
