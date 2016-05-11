@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
+import java.lang.ProcessBuilder.Redirect;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -296,6 +297,10 @@ public class SubnetAddress {
 		ProcessBuilder pb = new ProcessBuilder("/bin/bash", locCreateScript);
 		pb.environment().put("CFGFILE", bridgeCfgFile.getAbsolutePath());
 		pb.environment().put("SUBNWNAME", Long.toString(subnetID));
+		if (Debug.IS_DEBUG) {
+			pb.redirectOutput(Redirect.INHERIT);
+			pb.redirectError(Redirect.INHERIT);
+		}
 
 		Process p;
 		try {
