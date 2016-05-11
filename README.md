@@ -19,5 +19,5 @@
 
 Afterwards, the user can ssh into a provided port on the servers, or open and link their own custom ports. 
 
-####Design Choices: [Decisions](https://github.com/taishi8117/CPSC433-OpenStack-Final-Project/blob/master/design.txt)
+####Design Choices: [Decisions](https://github.com/taishi8117/CPSC433-OpenStack-Final-Project/blob/master/design.md)
 
