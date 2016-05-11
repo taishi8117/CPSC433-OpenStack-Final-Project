@@ -508,11 +508,10 @@ public class VirtualServer {
 	}
 
 	private String getOpenPortList() {
-		Integer[] openPortList = (Integer[]) portMap.keySet().toArray();
 		StringBuilder openPortBuilder = new StringBuilder();
-
-		for (int i = 0; i < openPortList.length; i++) {
-			openPortBuilder.append(openPortList[i].toString() + ",");
+		
+		for (int portNum : portMap.keySet()) {
+			openPortBuilder.append(portNum + ",");
 		}
 
 		return openPortBuilder.toString();
@@ -627,7 +626,7 @@ public class VirtualServer {
 				String line;
 
 				while ((line = buffer.readLine()) != null) {
-					Debug.debug("In UpdateState: " + line);
+					//Debug.debug("In UpdateState: " + line);
 					if (stateRegex.reset(line).find()) {
 						// found the network name
 						String status = stateRegex.group(1).trim();
