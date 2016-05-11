@@ -5,11 +5,12 @@
 
 ####VMs and Configuration
 
-
+#####Initial Configuration Scripts
+There are a series of initial configuration scripts that we use to set up the server using properties like the root disk size, and cpu size, it is very customized to tailor the user's needs. In addition, if the user has a custom initialization script, they could also place those scripts into a particular folder and upon the creation of the VM, the scripts will automatically be run.
 
 ####Networks and Subnets
-
 #####SSH
+Each virtual machine is able to be accessed with a provided SSH port. From there a user could make modifications, run programs or do other things on their virtual machine. 
 
 #####Ports
 Each port that is opened on the subnet can be joined to a valid port on the host machine. This allows access both to and from external networks with the subnet through that particular port.
