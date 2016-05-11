@@ -630,33 +630,36 @@ public class SimpleHTTPServer {
 			int portNum;
 			Inet4Address downstreamAddress;
 			int downstreamPort;
-			String vnicName = null;
+			long tenantId;
+			long networkId;
+			long subnetId;
 			try {
 				portNum = Integer.parseInt((String) obj.get("portNumber"));
 				downstreamAddress = (Inet4Address) InetAddress.getByName((String) obj.get("downstreamAddress"));
 				downstreamPort = Integer.parseInt((String) obj.get("downstreamPort"));
-				vnicName = (String) obj.get("vnicName");
+				tenantId = Long.getLong((String) obj.get("tenantId"));
+				networkId = Long.getLong((String) obj.get("networkId"));
+				subnetId = Long.getLong((String) obj.get("subnetId"));
 			} catch (Exception e) {
 				throw new IllegalArgumentException();
 			}
 
-			if (portNum == 0 || downstreamAddress == null || downstreamPort == 0){
+			if (portNum == 0 || downstreamAddress == null || downstreamPort == 0 ){
 				throw new IllegalArgumentException();
 			}
 
-			if (vnicName == null){
-				throw new IllegalArgumentException();
-				//TODO: implement a search for network/vnic by ip/port
-			}
 
 			HashMap<String, String> response = new HashMap<>();
 			response.put("method", "linkPort");
 			response.put("downstreamAddress", downstreamAddress.getHostAddress());
 			response.put("downstreamPort", Integer.toString(downstreamPort));
-			response.put("vnicName", vnicName);
+			response.put("tenantId", Long.toString(tenantId));
+			response.put("networkId", Long.toString(networkId));
+			response.put("subnetId", Long.toString(subnetId));
 
 			try {
-				int portNumber = apiHandler.linkPort(portNum, downstreamAddress, downstreamPort, vnicName);
+				int portNumber = apiHandler.linkPort(portNum, downstreamAddress, downstreamPort,
+													 tenantId, networkId, subnetId);
 				response.put("portNumber", Integer.toString(portNumber));
 			} catch (Exception e) {
 				if (Debug.IS_DEBUG) {
@@ -674,12 +677,16 @@ public class SimpleHTTPServer {
 			int portNum;
 			Inet4Address downstreamAddress;
 			int downstreamPort;
-			String vnicName = null;
+			long tenantId;
+			long networkId;
+			long subnetId;
 			try {
 				portNum = Integer.parseInt((String) obj.get("portNumber"));
 				downstreamAddress = (Inet4Address) InetAddress.getByName((String) obj.get("downstreamAddress"));
 				downstreamPort = Integer.parseInt((String) obj.get("downstreamPort"));
-				vnicName = (String) obj.get("vnicName");
+				tenantId = Long.getLong((String) obj.get("tenantId"));
+				networkId = Long.getLong((String) obj.get("networkId"));
+				subnetId = Long.getLong((String) obj.get("subnetId"));
 			} catch (Exception e) {
 				throw new IllegalArgumentException();
 			}
@@ -687,21 +694,17 @@ public class SimpleHTTPServer {
 			if (portNum == 0 || downstreamAddress == null || downstreamPort == 0){
 				throw new IllegalArgumentException();
 			}
-
-			if (vnicName == null){
-				throw new IllegalArgumentException();
-				//TODO: implement a search for network/vnic by ip/port
-			}
-
 			HashMap<String, String> response = new HashMap<>();
 			response.put("method", "unlinkPort");
 			response.put("downstreamAddress", downstreamAddress.getHostAddress());
 			response.put("downstreamPort", Integer.toString(downstreamPort));
-			response.put("vnicName", vnicName);
+			response.put("tenantId", Long.toString(tenantId));
+			response.put("networkId", Long.toString(networkId));
+			response.put("subnetId", Long.toString(subnetId));
 
 			try {
-				int portNumber = apiHandler.unlinkPort(portNum, downstreamAddress, downstreamPort, vnicName);
-				response.put("portNumber", Integer.toString(portNumber));
+				int portNumber = apiHandler.unlinkPort(portNum, downstreamAddress, downstreamPort,
+													   tenantId, networkId, subnetId);
 			} catch (Exception e) {
 				if (Debug.IS_DEBUG) {
 					e.printStackTrace();

@@ -173,13 +173,50 @@ public class APIHandler {
 		return details.toString();
 	}
 
-	public int linkPort(int portNum, Inet4Address downstreamAddress, int downstreamPort, String vnicName) {
-		controller.portMap.get(portNum).linkPort(downstreamAddress, downstreamPort, vnicName);
+	public int linkPort(int portNum, Inet4Address downstreamAddress,
+						int downstreamPort, long tenantID, long networkID,
+						long subnetID) throws  Exception {
+		String bridgeName;
+		Network network = controller.getNetworkFromID(tenantID, networkID);
+		if (network == null || !network.isNetworkUp()) {
+			//error finding network!!!!
+			throw new Exception("linkPort(): error finding a running network");
+		}
+		Subnet subnet = network.getSubnetFromID(subnetID);
+		if (subnet == null) {
+			//error finding subnet!!!!
+			throw new Exception("linkPort(): error finding a subnet");
+		}
+		bridgeName = subnet.subnetAddress.bridgeName;
+		if (bridgeName == null){
+			// error finding the bridge!
+			throw new Exception("linkPort(): error finding a bridge");
+		}
+		controller.portMap.get(portNum).linkPort(downstreamAddress,
+			downstreamPort, bridgeName);
 		return portNum;
 	}
 
-	public int unlinkPort(int portNum, Inet4Address downstreamAddress, int downstreamPort, String vnicName) {
-		controller.portMap.get(portNum).unlinkPort(downstreamAddress, downstreamPort, vnicName);
+	public int unlinkPort(int portNum, Inet4Address downstreamAddress,
+						  int downstreamPort, long tenantID, long networkID,
+						  long subnetID) throws  Exception {
+		String bridgeName;
+		Network network = controller.getNetworkFromID(tenantID, networkID);
+		if (network == null || !network.isNetworkUp()) {
+			//error finding network!!!!
+			throw new Exception("unlinkPort(): error finding a running network");
+		}
+		Subnet subnet = network.getSubnetFromID(subnetID);
+		if (subnet == null) {
+			//error finding subnet!!!!
+			throw new Exception("unlinkPort(): error finding a subnet");
+		}
+		bridgeName = subnet.subnetAddress.bridgeName;
+		if (bridgeName == null){
+			// error finding the bridge!
+			throw new Exception("unlinkPort(): error finding a bridge");
+		}
+		controller.portMap.get(portNum).unlinkPort(downstreamAddress, downstreamPort, bridgeName);
 		return portNum;
 	}
 

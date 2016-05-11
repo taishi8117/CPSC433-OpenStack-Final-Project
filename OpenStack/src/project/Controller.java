@@ -307,12 +307,12 @@ public class Controller {
 	 * establishRule - creates a rule in IP table of host machine for a specified routing config
 	 * @param up/downstream Addr - address to receive/download from
 	 * @param up/downstream port - port to receive/download from
-	 * @param vnicName - name of the network interface card attached to the VM/downstream client
+	 * @param bridgeName - name of the network interface card attached to the VM/downstream client
 	 */
 
     // Establishes the rules in iptable on NAT for both prerouting from and to the VM
     public void establishRule(Inet4Address upstreamAddress, int upstreamPort,Inet4Address downstreamAddress,
-                              int downstreamPort, String vnicName){
+                              int downstreamPort, String bridgeName){
         String addRuleScript = scriptDirectory + "/add_rule.sh";
 
         ProcessBuilder pb = new ProcessBuilder("/bin/bash", addRuleScript);
@@ -322,7 +322,7 @@ public class Controller {
         pb.environment().put("DOWNSTREAMPORT", Integer.toString(downstreamPort));
 
         pb.environment().put("host_interface", this.hostNIC);
-        pb.environment().put("vnet_interface", vnicName);
+        pb.environment().put("vnet_interface", bridgeName);
 
         Process p;
 
@@ -336,7 +336,7 @@ public class Controller {
 
     // Removes this rule from the IP tables (specifying args)
     public void destroyRule(Inet4Address upstreamAddress, int upstreamPort,Inet4Address downstreamAddress,
-                            int downstreamPort, String vnicName){
+                            int downstreamPort, String bridgeName){
         String removeRuleScript = scriptDirectory + "/remove_rule.sh";
         ProcessBuilder pb = new ProcessBuilder("/bin/bash", removeRuleScript);
         pb.environment().put("UPSTREAMADDR", upstreamAddress.getHostAddress());
@@ -345,7 +345,7 @@ public class Controller {
         pb.environment().put("DOWNSTREAMPORT", Integer.toString(downstreamPort));
 
         pb.environment().put("host_interface", this.hostNIC);
-        pb.environment().put("vnet_interface", vnicName);
+        pb.environment().put("vnet_interface", bridgeName);
 
         Process p;
 
