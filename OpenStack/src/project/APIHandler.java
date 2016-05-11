@@ -61,9 +61,11 @@ public class APIHandler {
 		}
 		infoMap.put("networkId", Long.toString(network.networkID));
 
-		Subnet subnet = network.getSubnetList().iterator().next();
-		if (subnet != null) {
+		try {
+			Subnet subnet = network.getSubnetList().iterator().next();
 			infoMap.put("subnetId", Long.toString(subnet.subnetID));
+		} catch (Exception e) {
+			// no subnet found -> do nothing
 		}
 
 		return infoMap;

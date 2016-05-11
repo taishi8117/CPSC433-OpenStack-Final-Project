@@ -6,7 +6,7 @@ package lib;
  *
  */
 public class Debug {
-	public final static boolean IS_DEBUG = false;
+	public final static boolean IS_DEBUG = true;
 
 	final static String ANSI_BOLD = "\u001B[1m";
 	final static String ANSI_GREEN = "\u001B[32m";
