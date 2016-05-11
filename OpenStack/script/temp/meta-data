@@ -1,0 +1,14 @@
+instance-id: iid-demo;
+network-interfaces: |
+  auto eth0
+  iface eth0 inet static
+  address 192.168.101.51
+  network 192.168.101.0
+  netmask 255.255.255.0
+  broadcast 192.168.101.255
+  gateway 192.168.101.1
+  dns-search demo.net
+  dns-nameservers 192.168.101.1
+  hwaddress ether 00:01:04:1b:2c:1f
+hostname: demo-hostname
+local-hostname: demo-local-hostname
