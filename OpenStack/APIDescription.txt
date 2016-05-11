@@ -1,0 +1,66 @@
+
+ (POST) /createTenant
+	- POST body: {"network" : <network name>}
+	- response body : {"method" : "createTenant", "network" : <network name> , "networkId" : <network id created> , "tenantID" : <tenant id created> } on success
+					  {"method" : "createTenant", "network" : <network name> , "error" : "true" } on error
+
+ (POST) /deleteTenant
+	- POST body: {"tenantId" : <tenant id to delete>}
+	- response body : {"method" : "deleteTenant", "tenantId" : <tenant id to delete> , "success" : ("true"|"false") }
+
+ (POST) /getTenantDetail
+	- POST body: {"tenantId" : <tenant id for which to retrieve the detail> }
+	- response body : {"method" : "getTenantDetail" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : (null|<subnet id>) }
+
+ (POST) /createSubnet
+	- POST body: {"tenantId" : <tenant id> , "networkId" : <network id> , "domain" : <domain name to create for the subnet> }
+	- response body : {"method" : "createSubnet" , "tenantId" : <tenant id> , "networkId" : <network id>, "subnetId" : <subnet id> , "domain" : <domain name> } on success
+					  {"method" : "createSubnet" , "tenantId" : <tenant id> , "networkId" : <network id>, "error" : "true" } on error
+
+ (POST) /destroySubnet
+	- POST body : {"tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> }
+	- response body : {"method" : "destroySubnet" , "tenantId" : <tenant id> , "networkId" : <network id>" , "subnetId" : <subnet id> , "success" : ("true"|"false") }
+
+ (POST) /getSubnetDetail
+	- POST body: {"tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> }
+	- response body : {"method" : "getSubnetDetail" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , {stuff from Subnet.getDetail()} ..... } on success
+					  {"method" : "getSubnetDetail" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "error" : "true" } on error
+
+ (POST) /createServer
+	- POST body: {"tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "servername" : <server name> , "password" : <password for default user> }
+	- response body : {"method" : "createServer" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "serverId" : <server id created> , "servername" : <server name> , "password" : <password> } on success
+					  {"method" : "createServer" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "error" : "true" } on error
+
+ (POST) /destroyServer
+	- POST body : {"tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "serverId" : <server id>}
+	- response body : {"method" : "destroyServer" , "tenantId" : <tenant id> , "networkId" : <network id>" , "subnetId" : <subnet id> , "serverId" : <server id> , "success" : ("true"|"false") }
+
+ (POST) /listServer
+	- POST body : {"tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> }
+	- response body : {"method" : "listServer" , "tenantId" : <tenant id> , "networkId" : <network id>" , "subnetId" : <subnet id> , {stuff from APIHandler.listServers()} .... } on success
+	                  {"method" : "listServer" , "tenantId" : <tenant id> , "networkId" : <network id>" , "subnetId" : <subnet id> , "error" : "true" } on error
+
+ (POST) /getServerDetail
+	- POST body: {"tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "serverId" : <server id> }
+	- response body : {"method" : "getServerDetail" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "serverId" : <server id> ,{stuff from VirtualServer.getServerDetail()} ..... } on success
+					  {"method" : "getServerDetail" , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> , "serverId" : <server id> ,"error" : "true" } on error
+
+ (POST) /createPort
+	- POST body: {"tenantId" : <tenant id> , "networkId" : <network id> , "portNumber" (optional) : <desired port number> }
+	- response body : {"method" : "createPort" , "tenantId" : <tenant id> , "networkId" : <network id> , "portNumber" : <assigned port number> } on success
+					  {"method" : "createPort" , "tenantId" : <tenant id> , "networkId" : <network id> , "portNumber" : <assigned port number> , "error" : "true" } on error
+
+ (POST) /destroyPort
+	- POST body : {"portNumber" : <port number to free> }
+	- response body : {"method" : "destroyPort" , "portNumber" : <freed port> , "success" : ("true"|"false") }
+
+
+ (POST) /linkPort
+	- POST body: {"portNumber" : <port number of host to link>  , "downstreamAddress" : <VMs ip address> , "downstreamPort" : <port of VM> , "vnicName" : <name of network interface of vm> }
+	- response body : {"method" : "linkPort" , "downstreamAddress" : <VMs ip address>, "downstreamPort" : <port of VM> , "vnicName" : <name of network interface of vm>, "portNumber": <number of port linked> } on success
+					  {"method" : "linkPort" , "downstreamAddress" : <VMs ip address>, "downstreamPort" : <port of VM> , "vnicName" : <name of network interface of vm> , "error" : "true" } on error
+
+ (POST) /unlinkPort
+	- POST body: {"portNumber" : <port number of host to unlink>  , "downstreamAddress" : <VMs ip address> , "downstreamPort" : <port of VM> , "vnicName" : <name of network interface of vm> }
+	- response body : {"method" : "unlinkPort" , "downstreamAddress" : <VMs ip address>, "downstreamPort" : <port of VM> , "vnicName" : <name of network interface of vm>, "portNumber": <number of port unlinked> } on success
+					  {"method" : "unlinkPort" , "downstreamAddress" : <VMs ip address>, "downstreamPort" : <port of VM> , "vnicName" : <name of network interface of vm> , "error" : "true" } on error

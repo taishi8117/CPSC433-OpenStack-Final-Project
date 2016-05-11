@@ -273,7 +273,7 @@ public class SimpleHTTPServer {
 		private String deleteTenantHandler(JSONObject obj) {
 			long tenantId;
 			try {
-				tenantId = Long.getLong((String) obj.get("tenantId"));
+				tenantId = Long.parseLong((String) obj.get("tenantId"));
 			} catch (Exception e) {
 				throw new IllegalArgumentException();
 			}
@@ -300,7 +300,7 @@ public class SimpleHTTPServer {
 		private String getTenantDetailHandler(JSONObject obj) {
 			long tenantId;
 			try {
-				tenantId = Long.getLong((String) obj.get("tenantId"));
+				tenantId = Long.parseLong((String) obj.get("tenantId"));
 			} catch (Exception e) {
 				throw new IllegalArgumentException();
 			}
@@ -327,8 +327,8 @@ public class SimpleHTTPServer {
 			long networkId;
 			String domain;
 			try {
-				tenantId = Long.getLong((String) obj.get("tenantId"));
-				networkId = Long.getLong((String) obj.get("networkId"));
+				tenantId = Long.parseLong((String) obj.get("tenantId"));
+				networkId = Long.parseLong((String) obj.get("networkId"));
 				domain = (String) obj.get("domain");
 			} catch (Exception e) {
 				throw new IllegalArgumentException();
@@ -364,9 +364,9 @@ public class SimpleHTTPServer {
 			long networkId;
 			long subnetId;
 			try {
-				tenantId = Long.getLong((String) obj.get("tenantId"));
-				networkId = Long.getLong((String) obj.get("networkId"));
-				subnetId = Long.getLong((String) obj.get("subnetId"));
+				tenantId = Long.parseLong((String) obj.get("tenantId"));
+				networkId = Long.parseLong((String) obj.get("networkId"));
+				subnetId = Long.parseLong((String) obj.get("subnetId"));
 			} catch (Exception e) {
 				throw new IllegalArgumentException();
 			}
@@ -396,9 +396,9 @@ public class SimpleHTTPServer {
 			long networkId;
 			long subnetId;
 			try {
-				tenantId = Long.getLong((String) obj.get("tenantId"));
-				networkId = Long.getLong((String) obj.get("networkId"));
-				subnetId = Long.getLong((String) obj.get("subnetId"));
+				tenantId = Long.parseLong((String) obj.get("tenantId"));
+				networkId = Long.parseLong((String) obj.get("networkId"));
+				subnetId = Long.parseLong((String) obj.get("subnetId"));
 			} catch (Exception e) {
 				throw new IllegalArgumentException();
 			}
@@ -431,9 +431,9 @@ public class SimpleHTTPServer {
 			String servername;
 			String password;
 			try {
-				tenantId = Long.getLong((String) obj.get("tenantId"));
-				networkId = Long.getLong((String) obj.get("networkId"));
-				subnetId = Long.getLong((String) obj.get("subnetId"));
+				tenantId = Long.parseLong((String) obj.get("tenantId"));
+				networkId = Long.parseLong((String) obj.get("networkId"));
+				subnetId = Long.parseLong((String) obj.get("subnetId"));
 				servername = (String) obj.get("servername");
 				password = (String) obj.get("password");
 			} catch (Exception e) {
@@ -472,10 +472,10 @@ public class SimpleHTTPServer {
 			long subnetId;
 			long serverId;
 			try {
-				tenantId = Long.getLong((String) obj.get("tenantId"));
-				networkId = Long.getLong((String) obj.get("networkId"));
-				subnetId = Long.getLong((String) obj.get("subnetId"));
-				serverId = Long.getLong((String) obj.get("serverId"));
+				tenantId = Long.parseLong((String) obj.get("tenantId"));
+				networkId = Long.parseLong((String) obj.get("networkId"));
+				subnetId = Long.parseLong((String) obj.get("subnetId"));
+				serverId = Long.parseLong((String) obj.get("serverId"));
 			} catch (Exception e) {
 				throw new IllegalArgumentException();
 			}
@@ -507,9 +507,9 @@ public class SimpleHTTPServer {
 			long networkId;
 			long subnetId;
 			try {
-				tenantId = Long.getLong((String) obj.get("tenantId"));
-				networkId = Long.getLong((String) obj.get("networkId"));
-				subnetId = Long.getLong((String) obj.get("subnetId"));
+				tenantId = Long.parseLong((String) obj.get("tenantId"));
+				networkId = Long.parseLong((String) obj.get("networkId"));
+				subnetId = Long.parseLong((String) obj.get("subnetId"));
 			} catch (Exception e) {
 				throw new IllegalArgumentException();
 			}
@@ -539,10 +539,10 @@ public class SimpleHTTPServer {
 			long subnetId;
 			long serverId;
 			try {
-				tenantId = Long.getLong((String) obj.get("tenantId"));
-				networkId = Long.getLong((String) obj.get("networkId"));
-				subnetId = Long.getLong((String) obj.get("subnetId"));
-				serverId = Long.getLong((String) obj.get("serverId"));
+				tenantId = Long.parseLong((String) obj.get("tenantId"));
+				networkId = Long.parseLong((String) obj.get("networkId"));
+				subnetId = Long.parseLong((String) obj.get("subnetId"));
+				serverId = Long.parseLong((String) obj.get("serverId"));
 			} catch (Exception e) {
 				throw new IllegalArgumentException();
 			}
@@ -568,8 +568,8 @@ public class SimpleHTTPServer {
 			long networkId;
 			int portNum = 0; // generates random port if one not provided
 			try {
-				tenantId = Long.getLong((String) obj.get("tenantId"));
-				networkId = Long.getLong((String) obj.get("networkId"));
+				tenantId = Long.parseLong((String) obj.get("tenantId"));
+				networkId = Long.parseLong((String) obj.get("networkId"));
 				portNum = Integer.parseInt((String) obj.get("portNumber"));
 			} catch (Exception e) {
 				throw new IllegalArgumentException();
@@ -637,9 +637,9 @@ public class SimpleHTTPServer {
 				portNum = Integer.parseInt((String) obj.get("portNumber"));
 				downstreamAddress = (Inet4Address) InetAddress.getByName((String) obj.get("downstreamAddress"));
 				downstreamPort = Integer.parseInt((String) obj.get("downstreamPort"));
-				tenantId = Long.getLong((String) obj.get("tenantId"));
-				networkId = Long.getLong((String) obj.get("networkId"));
-				subnetId = Long.getLong((String) obj.get("subnetId"));
+				tenantId = Long.parseLong((String) obj.get("tenantId"));
+				networkId = Long.parseLong((String) obj.get("networkId"));
+				subnetId = Long.parseLong((String) obj.get("subnetId"));
 			} catch (Exception e) {
 				throw new IllegalArgumentException();
 			}
@@ -684,9 +684,9 @@ public class SimpleHTTPServer {
 				portNum = Integer.parseInt((String) obj.get("portNumber"));
 				downstreamAddress = (Inet4Address) InetAddress.getByName((String) obj.get("downstreamAddress"));
 				downstreamPort = Integer.parseInt((String) obj.get("downstreamPort"));
-				tenantId = Long.getLong((String) obj.get("tenantId"));
-				networkId = Long.getLong((String) obj.get("networkId"));
-				subnetId = Long.getLong((String) obj.get("subnetId"));
+				tenantId = Long.parseLong((String) obj.get("tenantId"));
+				networkId = Long.parseLong((String) obj.get("networkId"));
+				subnetId = Long.parseLong((String) obj.get("subnetId"));
 			} catch (Exception e) {
 				throw new IllegalArgumentException();
 			}
