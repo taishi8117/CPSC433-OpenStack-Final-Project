@@ -548,7 +548,7 @@ public class SimpleHTTPServer {
 			}
 
 			HashMap<String,String> response = new HashMap<>();
-			response.put("method", "destroyServer");
+			response.put("method", "getServerDetail");
 			response.put("tenantId", Long.toString(tenantId));
 			response.put("networkId", Long.toString(networkId));
 			response.put("subnetId", Long.toString(subnetId));

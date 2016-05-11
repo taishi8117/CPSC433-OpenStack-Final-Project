@@ -518,7 +518,7 @@ public class SubnetAddress {
 				String line;
 
 				while ((line = buffer.readLine()) != null) {
-					Debug.debug("In UpdateState: " + line);
+					//Debug.debug("In UpdateState: " + line);
 					if (activeRegex.reset(line).find()) {
 						// found the network name
 						String status = activeRegex.group(1).trim();

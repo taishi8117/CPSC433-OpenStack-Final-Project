@@ -199,7 +199,10 @@ public class VirtualServer {
 		pb.environment().put("VSNETWORK", networkCfg);
 		pb.environment().put("METADATA_FILE", locMetadata);
 		pb.environment().put("USERDATA_FILE", locUserdata);
-
+		if (Debug.IS_DEBUG) {
+			pb.redirectOutput(Redirect.INHERIT);
+			pb.redirectError(Redirect.INHERIT);
+		}
 		Process p;
 		try {
 			p = pb.start();
@@ -623,6 +626,7 @@ public class VirtualServer {
 				String line;
 
 				while ((line = buffer.readLine()) != null) {
+					Debug.debug("In UpdateState: " + line);
 					if (stateRegex.reset(line).find()) {
 						// found the network name
 						String status = stateRegex.group(1).trim();
