@@ -80,14 +80,14 @@ import lib.Debug;
  *
  *
  * + (POST) /linkPort
- * 		- POST body: {"portNumber" : <port number of host to link>  , "downstreamAddress" : <VMs ip address> , "downstreamPort" : <port of VM> , "vnicName" : <name of network interface of vm> }
- * 		- response body : {"method" : "linkPort" , "downstreamAddress" : <VMs ip address>, "downstreamPort" : <port of VM> , "vnicName" : <name of network interface of vm>, "portNumber": <number of port linked> } on success
- *						  {"method" : "linkPort" , "downstreamAddress" : <VMs ip address>, "downstreamPort" : <port of VM> , "vnicName" : <name of network interface of vm> , "error" : "true" } on error
+ * 		- POST body: {"portNumber" : <port number of host to link>  , "downstreamAddress" : <VMs ip address> , "downstreamPort" : <port of VM> , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> }
+ * 		- response body : {"method" : "linkPort" , "downstreamAddress" : <VMs ip address>, "downstreamPort" : <port of VM> , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id>, "portNumber": <number of port linked> } on success
+ *						  {"method" : "linkPort" , "downstreamAddress" : <VMs ip address>, "downstreamPort" : <port of VM> , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id>, "error" : "true" } on error
  *
  * + (POST) /unlinkPort
- * 		- POST body: {"portNumber" : <port number of host to unlink>  , "downstreamAddress" : <VMs ip address> , "downstreamPort" : <port of VM> , "vnicName" : <name of network interface of vm> }
- * 		- response body : {"method" : "unlinkPort" , "downstreamAddress" : <VMs ip address>, "downstreamPort" : <port of VM> , "vnicName" : <name of network interface of vm>, "portNumber": <number of port unlinked> } on success
- *						  {"method" : "unlinkPort" , "downstreamAddress" : <VMs ip address>, "downstreamPort" : <port of VM> , "vnicName" : <name of network interface of vm> , "error" : "true" } on error
+ * 		- POST body: {"portNumber" : <port number of host to unlink>  , "downstreamAddress" : <VMs ip address> , "downstreamPort" : <port of VM> , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id> }
+ * 		- response body : {"method" : "unlinkPort" , "downstreamAddress" : <VMs ip address>, "downstreamPort" : <port of VM> , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id>, "portNumber": <number of port unlinked> } on success
+ *						  {"method" : "unlinkPort" , "downstreamAddress" : <VMs ip address>, "downstreamPort" : <port of VM> , "tenantId" : <tenant id> , "networkId" : <network id> , "subnetId" : <subnet id>       , "error" : "true" } on error
  *
  *
  * @author TAISHI
