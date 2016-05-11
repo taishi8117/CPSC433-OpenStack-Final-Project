@@ -111,6 +111,7 @@ public class SubnetAddress {
 		
 		// create bridge on host machine
 		if (createBridgeOnHost() == 0) {
+			Debug.redDebug("createBridgeOnHost() FAILED!");
 			throw new Exception("Error when creating a bridge on host for the subnet: " + subnetID);
 		}
 	}

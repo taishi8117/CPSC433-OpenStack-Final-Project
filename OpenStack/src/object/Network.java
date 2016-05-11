@@ -3,6 +3,7 @@ package object;
 import java.util.Collection;
 import java.util.HashMap;
 
+import lib.Debug;
 import lib.SubnetAddress;
 import project.Controller;
 
@@ -58,10 +59,12 @@ public class Network {
 			subnetID = controller.randomGen.nextLong();
 		} while (subnetMap.containsKey(subnetID));
 		
+		Debug.debug("registerNewSubnet(): New Subnet ID: " + subnetID );
 		// get currently available subnet address space
 		SubnetAddress subnetAddr = controller.getAvailableSubnetAddr(subnetID);
 		if (subnetAddr == null) {
 			//TODO error handling
+			Debug.redDebug("SubnetAddress couldn't be constructed");
 			
 		}
 		
