@@ -3,9 +3,14 @@
 
 #####Interesting Code/Techniques:
 
+
+
 #####Design Goals: [Design document](https://github.com/taishi8117/CPSC433-OpenStack-Final-Project/blob/master/Documentation/design.md)
 
 #####Achievement and Impact:
+We were able to create network virtualization software creating our own cloud service. 
+
+
 
 #####Future Improvements:
 Initially we had planned to create a separate storage component on the host machine accessible for each virtual server. This would allow a more efficient use of space and resources than the current design, allocating a certain amount per virtual machine, even if it did not fully consume all of that space.
