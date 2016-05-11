@@ -9,7 +9,7 @@
 3. sudo ./scripts/kvm_install.sh  (installs the necessary packages for supporting virtual machines)
 4. make run
 
-####APIs Supported: [API Specifications](https://github.com/taishi8117/CPSC433-OpenStack-Final-Project/blob/master/OpenStack/APIDescription.txt)
+####APIs Supported: [API Specifications](https://github.com/taishi8117/CPSC433-OpenStack-Final-Project/blob/master/Documentation/APIDescription.txt)
 
 #####Create in order:
 1. tenants
@@ -19,5 +19,5 @@
 
 Afterwards, the user can ssh into a provided port on the servers, or open and link their own custom ports. 
 
-####Design Choices: [Decisions](https://github.com/taishi8117/CPSC433-OpenStack-Final-Project/blob/master/design.md)
+####Design Choices: [Decisions](https://github.com/taishi8117/CPSC433-OpenStack-Final-Project/blob/master/Documentation/design.md)
 
