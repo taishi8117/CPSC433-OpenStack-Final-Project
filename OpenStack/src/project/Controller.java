@@ -297,8 +297,8 @@ public class Controller {
 		}
 		if (portMap.containsKey(portNum)) // specified port number is occupied
 			return null;
-		Port newPort = new Port(number, this);
-		portMap.put(number, newPort);
+		Port newPort = new Port(portNum, this);
+		portMap.put(portNum, newPort);
 		return newPort;
 	}
 
@@ -323,6 +323,9 @@ public class Controller {
 
         pb.environment().put("host_interface", this.hostNIC);
         pb.environment().put("vnet_interface", bridgeName);
+
+        Debug.debug("downstreamAddress"+ downstreamAddress.getHostAddress());
+        Debug.debug("downstreamPort"+ Integer.toString(downstreamPort));
 
         Process p;
 
