@@ -6,7 +6,7 @@
 1. clone the Repository
 2. cd Openstack
 2. make
-3. sudo ./scripts/kvm_install.sh  *installs the necessary packages for supporting virtual machines*
+3. sudo ./scripts/kvm_install.sh  (installs the necessary packages for supporting virtual machines)
 4. make run
 
 ####APIs Supported: [API Specifications](https://github.com/taishi8117/CPSC433-OpenStack-Final-Project/blob/master/OpenStack/APIDescription.txt)
