@@ -316,7 +316,7 @@ public class VirtualServer {
 			String sshd_cfg = getSSHConfig();
 			userdataBuilder.append("write_files:\n")
 						   .append("-   path: /etc/ssh/sshd_config\n")
-						   .append("content: |\n")
+						   .append("    content: |\n")
 						   .append(sshd_cfg);
 
 			
