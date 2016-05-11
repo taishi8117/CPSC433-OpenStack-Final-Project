@@ -360,7 +360,7 @@ public class VirtualServer {
 		portMap.put(sshPort.num, sshPort);
 
 		//create port mapping routing rules
-		controller.establishRule(controller.hostIP ,sshPort.num,dataNIC.ipAddr, sshPort.num, dataNIC.interfaceName);
+		controller.establishRule(controller.hostIP ,sshPort.num,dataNIC.ipAddr, sshPort.num, this.parentSubnet.subnetAddress.bridgeName);
 
 		//create sshd_config from sshd_config template
 		sshConfigBuilder.append("        " + "Port " + sshPort.num + "\n");
