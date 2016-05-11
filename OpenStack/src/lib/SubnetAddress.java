@@ -500,7 +500,7 @@ public class SubnetAddress {
 			String locCheckScript = scriptDirectory + "/check_bridge.sh";
 			pb = new ProcessBuilder("/bin/bash", locCheckScript);
 			
-			activeRegex = Pattern.compile("\\s*" + subnetID + "\\s+([^\\s]*).").matcher("");
+			activeRegex = Pattern.compile("\\s*" + subnetID + "\\s+([^\\s]*).*").matcher("");
 		}
 
 		@Override
@@ -518,6 +518,7 @@ public class SubnetAddress {
 				String line;
 
 				while ((line = buffer.readLine()) != null) {
+					Debug.debug("In UpdateState: " + line);
 					if (activeRegex.reset(line).find()) {
 						// found the network name
 						String status = activeRegex.group(1).trim();
