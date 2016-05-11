@@ -185,9 +185,11 @@ public class Subnet {
 	public void destroy() {
 		//destroy all servers associated
 		Collection<VirtualServer> servers = this.getRegisteredServerList();
-		for (VirtualServer server : servers) {
-			server.destroyServer();
-			serverMap.remove(server.serverID);
+		synchronized (servers) {
+			for (VirtualServer server : servers) {
+				server.destroyServer();
+				serverMap.remove(server.serverID);
+			}
 		}
 		
 		//destroy SubnetAddress

@@ -110,9 +110,11 @@ public class Network {
 	public void destroy() {
 		//destroy all subnets
 		Collection<Subnet> subnets = subnetMap.values();
-		for (Subnet subnet : subnets) {
-			subnet.destroy();
-			subnetMap.remove(subnet.subnetID);
+		synchronized (subnets) {
+			for (Subnet subnet : subnets) {
+				subnet.destroy();
+				subnetMap.remove(subnet.subnetID);
+			}
 		}
 		deactivate();
 	}
