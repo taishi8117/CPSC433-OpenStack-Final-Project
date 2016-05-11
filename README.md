@@ -10,5 +10,5 @@
 
 ####APIs Supported: [API Specifications](CPSC433-OpenStack-Final-Project/OpenStack/APIDescription.txt)
 
-####Design Choices: [Design Choices]()
+####Design Choices: [Decisions]()
 
