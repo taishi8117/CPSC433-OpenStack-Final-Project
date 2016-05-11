@@ -91,6 +91,15 @@ fi
 virsh vol-clone --pool ${POOL} ${IMG_NAME} ${VSHOST}.root.img
 virsh vol-resize --pool ${POOL} ${VSHOST}.root.img ${VROOTDISKSIZE}
 
+
+# POSSIBLY IMPORTANT
+echo "Converting image to format ${FORMAT}..."
+qemu-img convert -O ${FORMAT} ${POOL_PATH}/${VSHOST}.root.img ${POOL_PATH}/${VSHOST}.root.img.${FORMAT}
+rm ${POOL_PATH}/${VSHOST}.root.img
+mv ${POOL_PATH}/${VSHOST}.root.img.${FORMAT} ${POOL_PATH}/${VSHOST}.root.img
+
+
+
 echo "Creating host ${VSHOST}..."
 virt-install \
   --name ${VSHOST} \
@@ -101,7 +110,7 @@ virt-install \
   --network ${VSNETWORK} \
   --boot hd \
   --disk vol=${POOL}/${VSHOST}.root.img,device=disk,format=${FORMAT},bus=virtio \
-  --disk vol=${POOL}/${VSHOST}.configuration.iso,device=disk,bus=virtio \
+  --disk vol=${POOL}/${VSHOST}.configuration.iso,device=disk,format=${FORMAT},bus=virtio \
   --noautoconsole
 
 
