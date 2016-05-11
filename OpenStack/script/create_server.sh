@@ -100,8 +100,8 @@ virt-install \
   --memballoon virtio \
   --network ${VSNETWORK} \
   --boot hd \
-  --disk vol=${POOL}/${VSHOST}.root.img,format=${FORMAT},bus=virtio \
-  --disk vol=${POOL}/${VSHOST}.configuration.iso,bus=virtio \
+  --disk vol=${POOL}/${VSHOST}.root.img,device=disk,format=${FORMAT},bus=virtio \
+  --disk vol=${POOL}/${VSHOST}.configuration.iso,device=disk,bus=virtio \
   --noautoconsole
 
 
